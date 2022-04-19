@@ -16,12 +16,13 @@ CREATE TABLE Users (
   Photo VARCHAR(255),
   CreatedAt TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
---INSERT INTO users(email, password, firstname,lastname) VALUES('a@a.com','12345678','Dan','Arion');
+
 CREATE INDEX idx_users
 ON Users(Email);
 
 CREATE TABLE Conferences(
   ConferenceID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  CreatorID uuid NOT NULL,
   Name VARCHAR(255) NOT NULL,
   URL VARCHAR(255),
   Subtitles VARCHAR(255),
@@ -30,9 +31,9 @@ CREATE TABLE Conferences(
   DeadlinePaperreview DATE,
   DeadlineAcceptanceNotification DATE,
   DeadlineAcceptedPaperUpload DATE,
-  PhotoLink VARCHAR(255)
+  PhotoLink VARCHAR(255),
+  CONSTRAINT FK_Conferences_Creator FOREIGN KEY (CreatorID) REFERENCES Users(UserID)
 );
--- INSERT INTO conferences(name) VALUES('PWP');
 
 
 CREATE TABLE Participations(
@@ -86,7 +87,6 @@ CREATE TABLE Papers(
   CONSTRAINT FK_Paper_Session FOREIGN KEY (ConferenceSessionID) REFERENCES ConferenceSessions(ConferenceSessionID)
 );
 
-INSERT INTO Papers(ConferenceID) VALUES('0b20a365-b586-4892-b73e-b74825537d3a');
 
 CREATE TABLE AuthorsToPaper(
   AuthorsToPaperID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -153,7 +153,7 @@ CREATE TABLE Evaluation(
   ReviewerToPaperID uuid NOT NULL,
   CONSTRAINT FK_Keyword_PaperVersion FOREIGN KEY (PaperVersionID) REFERENCES PaperVersions(PaperVersionID),
   CONSTRAINT FK_Evaluation_ReviewerToPaper FOREIGN KEY (ReviewerToPaperID) REFERENCES ReviewersToPaper(ReviewerToPaperID),
-  SubmittedAt DATE 
+  SubmittedAt TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE Comments(
@@ -165,3 +165,12 @@ CREATE TABLE Comments(
   CONSTRAINT FK_Comment_Evaluation FOREIGN KEY (EvaluationID) REFERENCES Evaluation(EvaluationID),
   SubmittedAt TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE Papers
+ADD CONSTRAINT FK_Paper_CurrentVersion FOREIGN KEY (CurrentVersion) REFERENCES PaperVersions(PaperVersionID);
+
+
+
+INSERT INTO users(email, password, firstname,lastname) VALUES('a@a.com','12345678','Dan','Arion');
+INSERT INTO conferences(name, creatorid) VALUES('PWP', '4c2c5160-a5af-488d-b891-3ae2465e1483');
+INSERT INTO Papers(ConferenceID) VALUES('bad3611a-5190-4d37-88f1-f9e0eac94918');

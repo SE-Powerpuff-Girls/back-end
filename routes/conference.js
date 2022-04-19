@@ -48,16 +48,4 @@ router.put("/:conferenceid/name", authorization, async (req, res) => {
 	}
 });
 
-// does not work properly
-router.get("/papers", async (req, res) => {
-	try {
-		let conferenceid = "0b20a365-b586-4892-b73e-b74825537d3a";
-		const papers = await pool.query("SELECT * FROM papers WHERE conferenceid = $1", [conferenceid]);
-		res.json(papers.rowCount);
-	} catch (err) {
-		console.log(err.message);
-		res.status(500).send("Server error");
-	}
-});
-
 module.exports = router;
