@@ -50,11 +50,10 @@ CREATE TABLE Topics(
   Name VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE TopicsToConference(
+CREATE TABLE ConferenceTopics(
   TopicsToConferenceID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  TopicID uuid NOT NULL,
+  Text VARCHAR(255) NOT NULL,
   ConferenceID uuid NOT NULL,
-  CONSTRAINT FK_TopicToConference_Topic FOREIGN KEY (TopicID) REFERENCES Topics(TopicID),
   CONSTRAINT FK_TopicToConference_Conference FOREIGN KEY (ConferenceID) REFERENCES Conferences(ConferenceID)
 );
 
@@ -66,12 +65,11 @@ CREATE TABLE ConferenceSessions(
   CONSTRAINT FK_Session_Conference FOREIGN KEY (ConferenceID) REFERENCES Conferences(ConferenceID)
 );
 
-CREATE TABLE TopicsToConferenceSession(
+CREATE TABLE ConferenceSessionTopics(
   TopicsToConferenceSessionID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   ConferenceSessionID uuid NOT NULL,
-  TopicID uuid NOT NULL,
+  Name VARCHAR(255) NOT NULL,
   CONSTRAINT FK_SessionToTopic_Session FOREIGN KEY (ConferenceSessionID) REFERENCES ConferenceSessions(ConferenceSessionID),
-  CONSTRAINT FK_SessionToTopic_Topic FOREIGN KEY (TopicID) REFERENCES Topics(TopicID)
 );
 
 CREATE TABLE Papers(
@@ -107,12 +105,11 @@ CREATE TABLE PaperVersions(
   CONSTRAINT FK_PaperVersion_Paper FOREIGN KEY (PaperID) REFERENCES Papers(PaperID)
 );
 
-CREATE TABLE TopicsToPaperVersion(
-  TopicsToPaperVersionID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE PaperVersionTopics(
+  PaperVersionTopicsID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   PaperVersionID uuid NOT NULL,
-  TopicID uuid NOT NULL,
-  CONSTRAINT FK_PaperVersionToTopic_PaperVersion FOREIGN KEY (PaperVersionID) REFERENCES PaperVersions(PaperVersionID),
-  CONSTRAINT FK_PaperVersionToTopic_Topic FOREIGN KEY (TopicID) REFERENCES Topics(TopicID)
+  Name VARCHAR(255) NOT NULL,
+  CONSTRAINT FK_PaperVersionTopic_PaperVersion FOREIGN KEY (PaperVersionID) REFERENCES PaperVersions(PaperVersionID),
 );
 
 CREATE TABLE Keywords(
@@ -122,12 +119,11 @@ CREATE TABLE Keywords(
   CONSTRAINT FK_Keyword_PaperVersion FOREIGN KEY (PaperVersionID) REFERENCES PaperVersions(PaperVersionID)
 );
 
-CREATE TABLE ReviewerTopics(
-  ReviewerTopicID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  ReviewerID uuid NOT NULL,
-  CONSTRAINT FK_ReviewerTopic_Reviewer FOREIGN KEY (ReviewerID) REFERENCES Participations(ParticipationID),
-  TopicID uuid NOT NULL,
-  CONSTRAINT FK_ReviewerTopic_Topic FOREIGN KEY (TopicID) REFERENCES Topics(TopicID)
+CREATE TABLE UserTopics(
+  UserTopicID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  Topic 
+  UserID uuid NOT NULL,
+  CONSTRAINT FK_UserTopic_User FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
 
 CREATE TABLE ReviewersToPaper(
@@ -151,6 +147,7 @@ CREATE TABLE Evaluation(
   EvaluationID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   PaperVersionID uuid NOT NULL,
   ReviewerToPaperID uuid NOT NULL,
+  Accept BOOLEAN NOT NULL DEFAULT FALSE,
   CONSTRAINT FK_Keyword_PaperVersion FOREIGN KEY (PaperVersionID) REFERENCES PaperVersions(PaperVersionID),
   CONSTRAINT FK_Evaluation_ReviewerToPaper FOREIGN KEY (ReviewerToPaperID) REFERENCES ReviewersToPaper(ReviewerToPaperID),
   SubmittedAt TIMESTAMPTZ NOT NULL DEFAULT NOW()

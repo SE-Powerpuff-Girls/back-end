@@ -61,4 +61,74 @@ router.post("/login", validator, async (req, res) => {
 	}
 });
 
+router.get("/:userid", async (req, res) => {
+	try {
+		const users = await pool.query("SELECT * FROM users WHERE userid = $1", [req.params.userid]);
+		res.json(users.rows);
+	} catch (err) {
+		console.log(err.message);
+		res.status(500).send("Server error");
+	}
+});
+
+// update an user
+router.put("/:userid", async (req, res) => {
+	try {
+		res.json("Not Impemented");
+	} catch (err) {
+		console.log(err.message);
+		res.status(500).send("Server error");
+	}
+});
+
+// delete an user
+router.delete("/:userid", async (req, res) => {
+	try {
+		res.json("Not Impemented");
+	} catch (err) {
+		console.log(err.message);
+		res.status(500).send("Server error");
+	}
+});
+
+// get all topics for an user
+router.get("/:userid/topics", async (req, res) => {
+	try {
+		res.json("Not Impemented");
+	} catch (err) {
+		console.log(err.message);
+		res.status(500).send("Server error");
+	}
+});
+
+// add a new topic
+router.post("/:userid/topics", async (req, res) => {
+	try {
+		res.json("Not Impemented");
+	} catch (err) {
+		console.log(err.message);
+		res.status(500).send("Server error");
+	}
+});
+
+// updatea a topic
+router.put("/:userid/topics/:topicid", async (req, res) => {
+	try {
+		res.json("Not Impemented");
+	} catch (err) {
+		console.log(err.message);
+		res.status(500).send("Server error");
+	}
+});
+
+// delete a topic
+router.delete("/:userid/topics/:topicid", async (req, res) => {
+	try {
+		res.json("Not Impemented");
+	} catch (err) {
+		console.log(err.message);
+		res.status(500).send("Server error");
+	}
+});
+
 module.exports = router;
