@@ -4,6 +4,7 @@ const { pool } = require("../database");
 const jwtGenerator = require("../utils/jwtGenerator");
 const validator = require("../middleware/validator");
 const authorization = require("../middleware/authorization");
+const logWritter = require("../utils/logWritter");
 
 router.post("/register", validator, async (req, res) => {
 	try {
@@ -54,6 +55,7 @@ router.post("/login", validator, async (req, res) => {
 			});
 		}
 		const token = jwtGenerator(user.rows[0].userid);
+		logWritter(`User ${user.rows[0].firstname} ${user.rows[0].lastname} logged in`);
 		res.json(token);
 	} catch (err) {
 		console.log(err.message);
