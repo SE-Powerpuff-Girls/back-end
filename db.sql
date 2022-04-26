@@ -13,7 +13,7 @@ CREATE TABLE Users (
   DateOfBirth DATE,
   Nationality VARCHAR(50),
   Address VARCHAR(255),
-  Photo VARCHAR(255),
+  PhotoLink VARCHAR(255),
   CreatedAt TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -42,7 +42,7 @@ CREATE TABLE Participations(
   ConferenceID uuid NOT NULL,
   CONSTRAINT FK_Participation_User FOREIGN KEY (UserID) REFERENCES Users(UserID),
   CONSTRAINT FK_Participation_Conference FOREIGN KEY (ConferenceID) REFERENCES Conferences(ConferenceID),
-  ParticipationType INT NOT NULL 
+  ParticipationType VARCHAR(50) NOT NULL 
 );
 
 CREATE TABLE Topics(
@@ -51,7 +51,7 @@ CREATE TABLE Topics(
 );
 
 CREATE TABLE ConferenceTopics(
-  TopicsToConferenceID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  ConferenceTopicID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   Text VARCHAR(255) NOT NULL,
   ConferenceID uuid NOT NULL,
   CONSTRAINT FK_TopicToConference_Conference FOREIGN KEY (ConferenceID) REFERENCES Conferences(ConferenceID)
@@ -66,10 +66,10 @@ CREATE TABLE ConferenceSessions(
 );
 
 CREATE TABLE ConferenceSessionTopics(
-  TopicsToConferenceSessionID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  ConferenceSessionTopicID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   ConferenceSessionID uuid NOT NULL,
-  Name VARCHAR(255) NOT NULL,
-  CONSTRAINT FK_SessionToTopic_Session FOREIGN KEY (ConferenceSessionID) REFERENCES ConferenceSessions(ConferenceSessionID),
+  Text VARCHAR(255) NOT NULL,
+  CONSTRAINT FK_SessionToTopic_Session FOREIGN KEY (ConferenceSessionID) REFERENCES ConferenceSessions(ConferenceSessionID)
 );
 
 CREATE TABLE Papers(
@@ -108,20 +108,20 @@ CREATE TABLE PaperVersions(
 CREATE TABLE PaperVersionTopics(
   PaperVersionTopicsID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   PaperVersionID uuid NOT NULL,
-  Name VARCHAR(255) NOT NULL,
-  CONSTRAINT FK_PaperVersionTopic_PaperVersion FOREIGN KEY (PaperVersionID) REFERENCES PaperVersions(PaperVersionID),
+  Text VARCHAR(255) NOT NULL,
+  CONSTRAINT FK_PaperVersionTopic_PaperVersion FOREIGN KEY (PaperVersionID) REFERENCES PaperVersions(PaperVersionID)
 );
 
 CREATE TABLE Keywords(
   KeywordID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   PaperVersionID uuid NOT NULL,
-  Keyword VARCHAR(255) NOT NULL,
+  Text VARCHAR(255) NOT NULL,
   CONSTRAINT FK_Keyword_PaperVersion FOREIGN KEY (PaperVersionID) REFERENCES PaperVersions(PaperVersionID)
 );
 
 CREATE TABLE UserTopics(
   UserTopicID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  Topic 
+  Name VARCHAR(255) NOT NULL,
   UserID uuid NOT NULL,
   CONSTRAINT FK_UserTopic_User FOREIGN KEY (UserID) REFERENCES Users(UserID)
 );
@@ -167,7 +167,3 @@ ALTER TABLE Papers
 ADD CONSTRAINT FK_Paper_CurrentVersion FOREIGN KEY (CurrentVersion) REFERENCES PaperVersions(PaperVersionID);
 
 
-
-INSERT INTO users(email, password, firstname,lastname) VALUES('a@a.com','12345678','Dan','Arion');
-INSERT INTO conferences(name, creatorid) VALUES('PWP', '4c2c5160-a5af-488d-b891-3ae2465e1483');
-INSERT INTO Papers(ConferenceID) VALUES('bad3611a-5190-4d37-88f1-f9e0eac94918');
