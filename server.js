@@ -19,16 +19,8 @@ app.use("/papers", require("./routes/papers"));
 app.use("/paperversions", require("./routes/paperVersions"));
 app.use("evaluations", require("./routes/evaluations"));
 
-app.get("/secret", async (req, res) => {
-	try {
-		const firstName = await pool.query("DELETE FROM conferencetopics WHERE conferencetopicid = $1 RETURNING *", [
-			"48e097d2-3a4e-478f-afb0-f601638025e0",
-		]);
-		console.log(firstName.rows[0]);
-	} catch (err) {
-		console.log(err.message);
-		res.status(500).send("Server error");
-	}
+app.get("*", async (req, res) => {
+	res.status(404).send("404 Not Found");
 });
 
 logWritter("Server started");

@@ -165,5 +165,3 @@ CREATE TABLE Comments(
 
 ALTER TABLE Papers
 ADD CONSTRAINT FK_Paper_CurrentVersion FOREIGN KEY (CurrentVersion) REFERENCES PaperVersions(PaperVersionID);
-
-
