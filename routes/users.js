@@ -32,7 +32,7 @@ router.post("/register", validator, async (req, res) => {
 		res.json(token);
 	} catch (err) {
 		console.log(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send(err.message);
 	}
 });
 // login route
@@ -59,7 +59,7 @@ router.post("/login", validator, async (req, res) => {
 		res.json(token);
 	} catch (err) {
 		console.log(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send(err.message);
 	}
 });
 
@@ -85,17 +85,17 @@ router.get("/:userid", async (req, res) => {
 		res.status(200).json(output);
 	} catch (err) {
 		console.log(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send(err.message);
 	}
 });
 
 // update an user
-router.put("/:userid",authorization, async (req, res) => {
+router.put("/:userid", authorization, async (req, res) => {
 	try {
 		res.json("Not Impemented");
 	} catch (err) {
 		console.log(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send(err.message);
 	}
 });
 
@@ -111,7 +111,7 @@ router.delete("/:userid", authorization, async (req, res) => {
 		res.status(200).send("User Deleted");
 	} catch (err) {
 		console.log(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send(err.message);
 	}
 });
 
@@ -128,7 +128,7 @@ router.get("/:userid/topics", async (req, res) => {
 		res.status(200).json(output);
 	} catch (err) {
 		console.log(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send(err.message);
 	}
 });
 
@@ -145,7 +145,7 @@ router.post("/:userid/topics", authorization, async (req, res) => {
 		res.status(200).json("Topic added");
 	} catch (err) {
 		console.log(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send(err.message);
 	}
 });
 
@@ -171,7 +171,7 @@ router.put("/:userid/topics/:topicid", authorization, async (req, res) => {
 		res.json("Topic updated");
 	} catch (err) {
 		console.log(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send(err.message);
 	}
 });
 
@@ -192,7 +192,7 @@ router.delete("/:userid/topics/:topicid", authorization, async (req, res) => {
 		res.send("Topic Deleted");
 	} catch (err) {
 		console.log(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send(err.message);
 	}
 });
 
