@@ -50,7 +50,64 @@ router.get("/:conferenceid", async (req, res) => {
 // update a conference
 router.put("/:conferenceid", authorization, ownershipConference, async (req, res) => {
 	try {
-		res.send("Not implemented");
+		/*
+		Name VARCHAR(255) NOT NULL,
+  URL VARCHAR(255),
+  Subtitles VARCHAR(255),
+  ContactInformation VARCHAR(255),
+  DeadlinePaperSubmission DATE,
+  DeadlinePaperreview DATE,
+  DeadlineAcceptanceNotification DATE,
+  DeadlineAcceptedPaperUpload DATE,
+	*/
+		const {
+			name,
+			url,
+			subtitles,
+			contactinformation,
+			deadlinepapersubmission,
+			deadlinepaperreview,
+			deadlineacceptancenotification,
+			deadlineacceptedpaperupload,
+		} = req.body;
+		const { conferenceid } = req.params;
+		const conference = await pool.query("SELECT * FROM conferences WHERE conferenceid = $1", [conferenceid]);
+		if (url == null) {
+			url = conference.rows[0].url;
+		}
+		if (subtitles == null) {
+			subtitles = conference.rows[0].subtitles;
+		}
+		if (contactinformation == null) {
+			contactinformation = conference.rows[0].contactinformation;
+		}
+		if (deadlinepapersubmission == null) {
+			deadlinepapersubmission = conference.rows[0].deadlinepapersubmission;
+		}
+		if (deadlinepaperreview == null) {
+			deadlinepaperreview = conference.rows[0].deadlinepaperreview;
+		}
+		if (deadlineacceptancenotification == null) {
+			deadlineacceptancenotification = conference.rows[0].deadlineacceptancenotification;
+		}
+		if (deadlineacceptedpaperupload == null) {
+			deadlineacceptedpaperupload = conference.rows[0].deadlineacceptedpaperupload;
+		}
+		const update = await pool.query(
+			"UPDATE conferences SET name = $1, url = $2, subtitles = $3, contactinformation = $4, deadlinepapersubmission = $5, deadlinepaperreview = $6, deadlineacceptancenotification = $7, deadlineacceptedpaperupload = $8 WHERE conferenceid = $9 RETURNING *",
+			[
+				name,
+				url,
+				subtitles,
+				contactinformation,
+				deadlinepapersubmission,
+				deadlinepaperreview,
+				deadlineacceptancenotification,
+				deadlineacceptedpaperupload,
+				conferenceid,
+			]
+		);
+		res.json(update.rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");

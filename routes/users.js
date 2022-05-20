@@ -92,7 +92,8 @@ router.get("/:userid", async (req, res) => {
 // update an user
 router.put("/:userid", authorization, async (req, res) => {
 	try {
-		res.json("Not Impemented");
+		const { firstName, lastName, title, gender, nationality, adress } = req.body;
+		res.send("Not implemented");
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send(err.message);

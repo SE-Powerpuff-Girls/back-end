@@ -4,10 +4,10 @@ const { pool } = require("../database");
 const jwtGenerator = require("../utils/jwtGenerator");
 const validator = require("../middleware/validator");
 const authorization = require("../middleware/authorization");
-const paperIsOwner = require("../middleware/ownership/paper");
-const hasPaperAccess = require("../middleware/ownership/hasPaperAccess");
+const hasPaperAccess = require("../middleware/ownership/paper");
+
 // get a paper
-router.get("/:paperid", async (req, res) => {
+router.get("/:paperid", authorization, hasPaperAccess, async (req, res) => {
 	try {
 		const { paperid } = req.params;
 		const { rows } = await pool.query("SELECT * FROM papers WHERE paperid = $1", [paperid]);
@@ -24,7 +24,7 @@ router.get("/:paperid", async (req, res) => {
 });
 
 // deletes a paper
-router.delete("/:paperid", authorization, paperIsOwner, async (req, res) => {
+router.delete("/:paperid", authorization, hasPaperAccess, async (req, res) => {
 	try {
 		const { paperid } = req.params;
 		const paper = await pool.query("DELETE FROM papers WHERE paperid = $1 RETURNING *", [paperid]);
@@ -60,7 +60,7 @@ router.get("/:paperid/authors", async (req, res) => {
 });
 
 // append an author to a paper
-router.post("/:paperid/authors", authorization, paperIsOwner, async (req, res) => {
+router.post("/:paperid/authors", authorization, hasPaperAccess, async (req, res) => {
 	try {
 		const { paperid } = req.params;
 		const { authorid } = req.body;
@@ -78,7 +78,7 @@ router.post("/:paperid/authors", authorization, paperIsOwner, async (req, res) =
 });
 
 // remove an author from a paper
-router.delete("/:paperid/athors/:authorid", authorization, paperIsOwner, async (req, res) => {
+router.delete("/:paperid/athors/:authorid", authorization, hasPaperAccess, async (req, res) => {
 	try {
 		const { paperid, authorid } = req.params;
 		const { rows } = await pool.query("DELETE FROM paperauthors WHERE paperid = $1 AND authorid = $2 RETURNING *", [paperid, authorid]);
@@ -112,17 +112,8 @@ router.get("/:paperid/reviewers", async (req, res) => {
 });
 
 // append a reviewer to a paper
-router.post("/:paperid/reviewers", async (req, res) => {
+router.post("/:paperid/reviewers", authorization, async (req, res) => {
 	try {
-		const { paperid } = req.params;
-		const { reviewerid } = req.body;
-		const { rows } = await pool.query("INSERT INTO reviewerstopaper (paperid, reviewerid) VALUES ($1, $2) RETURNING *", [paperid, reviewerid]);
-		if (rows.length === 0) {
-			return res.status(404).json({
-				message: "Paper not found",
-			});
-		}
-		return res.status(200).json(rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -132,14 +123,6 @@ router.post("/:paperid/reviewers", async (req, res) => {
 // remove a reviewer from a paper
 router.delete("/:paperid/reviewers/:reviewerid", async (req, res) => {
 	try {
-		const { paperid, reviewerid } = req.params;
-		const { rows } = await pool.query("DELETE FROM reviewerstopaper WHERE paperid = $1 AND reviewerid = $2 RETURNING *", [paperid, reviewerid]);
-		if (rows.length === 0) {
-			return res.status(404).json({
-				message: "Paper not found",
-			});
-		}
-		return res.status(200).json(rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -205,18 +188,8 @@ router.get("/:paperid/conflictofinterests/:conflictofinterestsid", async (req, r
 	}
 });
 
-// update a conflict of itnerests
-router.put("/:paperid/conflictofinterests/:conflictofinterestsid", async (req, res) => {
-	try {
-		res.send("Not implemented");
-	} catch (err) {
-		console.log(err.message);
-		res.status(500).send("Server error");
-	}
-});
-
 // delete a conflict of itnerests
-router.delete("/:paperid/conflictofinterests/:conflictofinterestsid", async (req, res) => {
+router.delete("/:paperid/conflictofinterests/:conflictofinterestsid", authorization, hasPaperAccess, async (req, res) => {
 	try {
 		res.send("Not implemented");
 	} catch (err) {
@@ -226,7 +199,7 @@ router.delete("/:paperid/conflictofinterests/:conflictofinterestsid", async (req
 });
 
 // get all paper versions for a paper
-router.get("/:paperid/paperversions", async (req, res) => {
+router.get("/:paperid/paperversions", authorization, hasPaperAccess, async (req, res) => {
 	try {
 		res.send("Not implemented");
 	} catch (err) {
@@ -236,9 +209,10 @@ router.get("/:paperid/paperversions", async (req, res) => {
 });
 
 // create a paper version
-router.post("/:paperid/paperversions", async (req, res) => {
+router.post("/:paperid/paperversions", authorization, hasPaperAccess, async (req, res) => {
 	try {
-		res.send("Not implemented");
+		const { paperid } = req.params;
+		const { rows } = await pool.query("INSERT INTO paperversions (paperid, version) VALUES ($1, $2) RETURNING *", [paperid, req.body.version]);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");

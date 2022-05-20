@@ -3,6 +3,8 @@ const logWritter = require("../../utils/logWritter");
 
 module.exports = async (req, res, next) => {
 	try {
+		// creator id is the user id
+
 		let isOwner = await pool.query("SELECT * FROM conferences WHERE creatorid = $1 AND conferenceid = $2", [req.userid, req.params.conferenceid]);
 		let ischair = await pool.query("SELECT * FROM participations WHERE userid = $1 AND conferenceid = $2 AND ParticipationType = $3", [
 			req.userid,

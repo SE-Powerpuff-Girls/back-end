@@ -165,7 +165,7 @@ router.post("/:conferencesessionid/papers/", authorization, conferenSesessionIsO
 });
 
 // removes a paper from session. DOES NOT DELETE PAPER
-router.delete("/:conferencesessionid/papers/:paperid", async (req, res) => {
+router.delete("/:conferencesessionid/papers/:paperid", authorization, conferenSesessionIsOwner, async (req, res) => {
 	try {
 		const { conferencesessionid, paperid } = req.params;
 		const papers = await pool.query("UPDATE papers SET conferencesessionid = NULL WHERE paperid = $1 RETURNING *", [paperid]);
