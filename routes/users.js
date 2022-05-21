@@ -29,7 +29,7 @@ router.post("/register", validator, async (req, res) => {
 		]);
 
 		const token = jwtGenerator(newUser.rows[0].userid, newUser.rows[0].firstname, newUser.rows[0].lastname, newUser.rows[0].email);
-		res.json(token);
+		res.json({ token, newUser });
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send(err.message);
@@ -56,7 +56,18 @@ router.post("/login", validator, async (req, res) => {
 		}
 		const token = jwtGenerator(user.rows[0].userid, user.rows[0].firstname, user.rows[0].lastname, user.rows[0].email);
 		//logWritter(`User ${user.rows[0].firstname} ${user.rows[0].lastname} logged in`);
-		res.json(token);
+		output = {
+			userid: user.rows[0].userid,
+			firstname: user.rows[0].firstname,
+			lastname: user.rows[0].lastname,
+			email: user.rows[0].email,
+			title: user.rows[0].title,
+			gender: user.rows[0].gender,
+			nationality: user.rows[0].nationality,
+			adress: user.rows[0].address,
+			photolink: user.rows[0].photolink,
+		};
+		res.json({ token, output });
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send(err.message);
@@ -79,7 +90,7 @@ router.get("/:userid", async (req, res) => {
 			title: user.rows[0].title,
 			gender: user.rows[0].gender,
 			nationality: user.rows[0].nationality,
-			adress: user.rows[0].adress,
+			adress: user.rows[0].address,
 			photolink: user.rows[0].photolink,
 		};
 		res.status(200).json(output);
@@ -122,10 +133,12 @@ router.get("/:userid/topics", async (req, res) => {
 		const topics = await pool.query("SELECT * FROM usertopics WHERE userid = $1", [req.params.userid]);
 		output = [];
 		topics.rows.forEach((topic) => {
+			console.log(topic);
 			output.push({
-				text: topic.text,
+				name: topic.name,
 			});
 		});
+		console.log(output);
 		res.status(200).json(output);
 	} catch (err) {
 		console.log(err.message);
@@ -141,8 +154,8 @@ router.post("/:userid/topics", authorization, async (req, res) => {
 				message: "You are not authorized to add a topic to this user",
 			});
 		}
-		const { text } = req.body;
-		const topic = await pool.query("INSERT INTO usertopics (userid, text) VALUES ($1, $2) RETURNING *", [req.params.userid, text]);
+		const text = req.body.name;
+		const topic = await pool.query("INSERT INTO usertopics (userid, name) VALUES ($1, $2) RETURNING *", [req.params.userid, text]);
 		res.status(200).json("Topic added");
 	} catch (err) {
 		console.log(err.message);
