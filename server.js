@@ -67,6 +67,10 @@ app.get("/testget", async (req, res) => {
 	}
 });
 
+app.get("/abc", (req, res) => {
+	res.send("abc");
+});
+
 app.get("*", async (req, res) => {
 	res.status(404).send("404 Not Found");
 });
