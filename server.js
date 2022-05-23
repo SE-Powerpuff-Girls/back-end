@@ -19,6 +19,54 @@ app.use("/papers", require("./routes/papers"));
 app.use("/paperversions", require("./routes/paperVersions"));
 app.use("evaluations", require("./routes/evaluations"));
 
+// test routes
+
+app.post("/testput", async (req, res) => {
+	// add an user
+	/*
+		Email VARCHAR(255) NOT NULL,
+  UNIQUE (Email),
+  Password VARCHAR(255) NOT NULL,
+  FirstName VARCHAR(255) NOT NULL,
+  LastName VARCHAR(255) NOT NULL,
+		*/
+	try {
+		const { rows } = await pool.query("INSERT INTO users (email, password, firstname, lastname) VALUES ($1, $2, $3, $4) RETURNING *", [
+			"test@test.com",
+			"test1234",
+			"test",
+			"test",
+		]);
+		if (rows.length === 0) {
+			return res.status(404).json({
+				message: "User not found",
+			});
+		}
+		return res.status(201).json(rows[0]);
+	} catch (err) {
+		console.log(err.message);
+		logWritter(err.message);
+		res.status(500).send("Server error");
+	}
+});
+
+// get all users
+app.get("/testget", async (req, res) => {
+	try {
+		const { rows } = await pool.query("SELECT * FROM users");
+		if (rows.length === 0) {
+			return res.status(404).json({
+				message: "No users found",
+			});
+		}
+		return res.status(200).json(rows);
+	} catch (err) {
+		console.log(err.message);
+		logWritter(err.message);
+		res.status(500).send("Server error");
+	}
+});
+
 app.get("*", async (req, res) => {
 	res.status(404).send("404 Not Found");
 });
