@@ -413,7 +413,7 @@ router.post("/:conferenceid/papers/", authorization, async (req, res) => {
 			req.params.conferenceid,
 		]);
 		if (isAuthor.rows.length === 0) {
-			return res.status(400).json({
+			return res.status(403).json({
 				message: "You are not an author for this conference",
 			});
 		}
@@ -424,7 +424,7 @@ router.post("/:conferenceid/papers/", authorization, async (req, res) => {
 			req.params.conferenceid,
 		]);
 		if (reviewers.rows.length === 0) {
-			return res.status(400).json({
+			return res.status(404).json({
 				message: "No reviewers found",
 			});
 		}

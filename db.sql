@@ -35,7 +35,6 @@ CREATE TABLE Conferences(
   CONSTRAINT FK_Conferences_Creator FOREIGN KEY (CreatorID) REFERENCES Users(UserID)
 );
 
-
 CREATE TABLE Participations(
   ParticipationID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   UserID uuid NOT NULL,

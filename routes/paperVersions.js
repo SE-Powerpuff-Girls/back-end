@@ -196,10 +196,33 @@ router.get("/:paperversionid/evaluations", authorization, canSeePaperVersion, as
 router.post("/:paperversionid/evaluations", authorization, canSeePaperVersion, async (req, res) => {
 	try {
 		const { paperversionid } = req.params;
-		const { evaluation } = req.body;
-		const { rows } = await pool.query("INSERT INTO evaluations (paperversionid, evaluation) VALUES ($1, $2) RETURNING *", [
+		//const { evaluation } = req.body;
+		// get the paper
+		const { paper } = await pool.query("SELECT * FROM papers WHERE paperid = (SELECT paperid FROM paperversions WHERE paperversionid = $1)", [
 			paperversionid,
-			evaluation,
+		]);
+		if (paper.length === 0) {
+			logWritter(`paper version ${paperversionid} has no paper`);
+			return res.status(404).json({
+				message: "Paper version not found",
+			});
+		}
+
+		// get the participation id
+		const { participation } = await pool.query("SELECT participationid FROM participations WHERE userid = $1 AND paperid = $2", [
+			req.userid,
+			paper[0].paperid,
+		]);
+
+		// get reviewerstopaper
+		const { reviewerstopaper } = await pool.query("SELECT * FROM reviewerstopapers WHERE participationid = $1 AND paperversionid = $2", [
+			participation[0].participationid,
+			paper[0].paperid,
+		]);
+
+		const { rows } = await pool.query("INSERT INTO evaluations (paperversionid, reviewertopaperid) VALUES ($1, $2) RETURNING *", [
+			paperversionid,
+			reviewerstopaper[0].reviewerstopaperid,
 		]);
 		if (rows.length === 0) {
 			logWritter(`paper version ${paperversionid} not found`);
