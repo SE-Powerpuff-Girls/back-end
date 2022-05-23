@@ -33,7 +33,7 @@ module.exports = async (req, res, next) => {
 		logWritter("paperversion", "get", req.userid, paperversionid, "success");
 		next();
 	} catch (err) {
-		logWritter(`${req.ip}  Unauthorized request on route ${req.path}`);
+		logWritter(`Unauthorized request on route ${req.path}`);
 		console.log(err.message);
 		res.status(403).send("Not authorized");
 	}

@@ -6,7 +6,7 @@ module.exports = async (req, res, next) => {
 	try {
 		const token = req.header("Authorization").replace("Bearer ", "");
 		if (!token) {
-			logWritter(`${req.ip}  Unauthorized request on route ${req.path}`);
+			logWritter(` Unauthorized request on route ${req.path}`);
 			return res.status(401).json({
 				message: "No token, authorization denied",
 			});
@@ -19,10 +19,10 @@ module.exports = async (req, res, next) => {
 		// 		message: "You are not authorized to perform actions on this user",
 		// 	});
 		// }
-		logWritter(`${req.ip},  Authorized as user ${req.userid} for route ${req.path}`);
+		logWritter(`Authorized as user ${req.userid} for route ${req.path}`);
 		next();
 	} catch (err) {
-		logWritter(`${req.ip}  Unauthorized request on route ${req.path}`);
+		logWritter(`Unauthorized request on route ${req.path}`);
 		console.log(err.message);
 		res.status(401).send("Not authorized");
 	}
