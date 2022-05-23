@@ -1,4 +1,4 @@
-CREATE DATABASE PwpGirls;
+-- CREATE DATABASE PwpGirls;
 -- \c PwpGirls
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -159,7 +159,7 @@ CREATE TABLE Comments(
   Comment VARCHAR(255) NOT NULL,
   Public BOOLEAN NOT NULL DEFAULT FALSE,
   PositionInDocument VARCHAR(255),
-  CONSTRAINT FK_Comment_Evaluation FOREIGN KEY (EvaluationID) REFERENCES Evaluation(EvaluationID),
+  CONSTRAINT FK_Comment_Evaluation FOREIGN KEY (EvaluationID) REFERENCES Evaluations(EvaluationID),
   SubmittedAt TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
