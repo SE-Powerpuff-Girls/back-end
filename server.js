@@ -8,7 +8,7 @@ const cors = require("cors");
 app.use(cors());
 app.use(express.json());
 app.set("port", process.env.PORT || 5000);
-app.set("trust proxy", true);
+//app.set("trust proxy", true);
 
 //API Endpoints
 //app.use("/", require("./routes/jwtAuth"));
