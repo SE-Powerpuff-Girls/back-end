@@ -70,7 +70,7 @@ router.post("/login", validator, async (req, res) => {
 			title: user.rows[0].title,
 			gender: user.rows[0].gender,
 			nationality: user.rows[0].nationality,
-			adress: user.rows[0].address,
+			address: user.rows[0].address,
 			photolink: user.rows[0].photolink,
 		};
 
@@ -100,7 +100,7 @@ router.get("/:userid", async (req, res) => {
 			title: user.rows[0].title,
 			gender: user.rows[0].gender,
 			nationality: user.rows[0].nationality,
-			adress: user.rows[0].address,
+			address: user.rows[0].address,
 			photolink: user.rows[0].photolink,
 		};
 		logWritter("Performed get");
@@ -115,8 +115,8 @@ router.get("/:userid", async (req, res) => {
 // update an user
 router.put("/:userid", authorization, upload, async (req, res) => {
 	try {
-		const { firstName, lastName, title, gender, nationality, adress } = req.body;
-		const user = pool.query("SELECT * FROM users where userid = $1", [req.params.userid]);
+		let { firstName, lastName, title, gender, nationality, address } = req.body;
+		const user = await pool.query("SELECT * FROM users where userid = $1", [req.params.userid]);
 		if (firstName == null || firstName == undefined) {
 			firstName = user.rows[0].firstname;
 		}
@@ -132,17 +132,17 @@ router.put("/:userid", authorization, upload, async (req, res) => {
 		if (nationality == null || nationality == undefined) {
 			nationality = user.rows[0].nationality;
 		}
-		if (adress == null || adress == undefined) {
-			adress = user.rows[0].adress;
+		if (address == null || address == undefined) {
+			address = user.rows[0].address;
 		}
 
 		let url = await addFile(req.file);
 		if (url == null) {
 			url = "";
 		}
-		let updated_user = pool.query(
-			"UPDATE users SET firstname = $1, lastname = $2, title = $3, gender = $4, nationality = $5, adress = $6, photolink = $7 WHERE userid = $8 RETURNING *",
-			[firstName, lastName, title, gender, nationality, adress, url, req.params.userid]
+		let updated_user = await pool.query(
+			"UPDATE users SET firstname = $1, lastname = $2, title = $3, gender = $4, nationality = $5, address = $6, photolink = $7 WHERE userid = $8 RETURNING *",
+			[firstName, lastName, title, gender, nationality, address, url, req.params.userid]
 		);
 		if (updated_user.rows.length == 0) {
 			logWritter("user", "update", req.params.userid, null, "fail");
@@ -232,7 +232,10 @@ router.delete("/:userid/topics/:topicid", authorization, async (req, res) => {
 				message: "You are not authorized to delete this topic",
 			});
 		}
-		const topic = await pool.query("DELETE FROM usertopics WHERE topicid = $1 AND userid = $2 RETURNING *", [req.params.topicid, req.params.userid]);
+		const topic = await pool.query("DELETE FROM usertopics WHERE usertopicid = $1 AND userid = $2 RETURNING *", [
+			req.params.topicid,
+			req.params.userid,
+		]);
 		if (topic.rows.length === 0) {
 			logWritter("user", "delete", req.params.userid, null, "fail");
 			return res.status(404).json({
@@ -240,7 +243,7 @@ router.delete("/:userid/topics/:topicid", authorization, async (req, res) => {
 			});
 		}
 		logWritter("user", "delete", req.params.userid, null, "success");
-		res.status(200).send("Topic Deleted");
+		res.status(201).send("Topic Deleted");
 	} catch (err) {
 		console.log(err.message);
 		logWritter(err.message);
