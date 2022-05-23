@@ -232,7 +232,10 @@ router.delete("/:userid/topics/:topicid", authorization, async (req, res) => {
 				message: "You are not authorized to delete this topic",
 			});
 		}
-		const topic = await pool.query("DELETE FROM usertopics WHERE topicid = $1 AND userid = $2 RETURNING *", [req.params.topicid, req.params.userid]);
+		const topic = await pool.query("DELETE FROM usertopics WHERE usertopicid = $1 AND userid = $2 RETURNING *", [
+			req.params.topicid,
+			req.params.userid,
+		]);
 		if (topic.rows.length === 0) {
 			logWritter("user", "delete", req.params.userid, null, "fail");
 			return res.status(404).json({
@@ -240,7 +243,7 @@ router.delete("/:userid/topics/:topicid", authorization, async (req, res) => {
 			});
 		}
 		logWritter("user", "delete", req.params.userid, null, "success");
-		res.status(200).send("Topic Deleted");
+		res.status(201).send("Topic Deleted");
 	} catch (err) {
 		console.log(err.message);
 		logWritter(err.message);
