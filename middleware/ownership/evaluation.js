@@ -3,14 +3,6 @@ const logWritter = require("../../utils/logWritter");
 
 module.exports = async (req, res, next) => {
 	try {
-		// user must be either a reviewer of the paper, or the owner of the conference or the author
-		// confert userid to participation id
-		let participationid = await pool.query("SELECT * FROM participations WHERE userid = $1 AND conferenceid = $2", [
-			req.userid,
-			req.params.conferenceid,
-		]);
-		participationid = participationid.rows[0].participationid;
-
 		//get papper version id from evaluation
 		let paperversionid = await pool.query("SELECT * FROM evaluations WHERE evaluationid = $1", [req.params.evaluationid]);
 		paperversionid = paperversionid.rows[0].paperversionid;
@@ -21,6 +13,11 @@ module.exports = async (req, res, next) => {
 		// get conference id from paper
 		let conferenceid = await pool.query("SELECT * FROM papers WHERE paperid = $1", [paperid]);
 		conferenceid = conferenceid.rows[0].conferenceid;
+
+		// user must be either a reviewer of the paper, or the owner of the conference or the author
+		// confert userid to participation id
+		let participationid = await pool.query("SELECT * FROM participations WHERE userid = $1 AND conferenceid = $2", [req.userid, conferenceid]);
+		participationid = participationid.rows[0].participationid;
 
 		let isReviewer = await pool.query("SELECT * FROM ReviewersToPaper WHERE reviewerid = $1 AND paperid = $2", [participationid, paperid]);
 		// is chair

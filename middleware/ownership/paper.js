@@ -30,7 +30,6 @@ module.exports = async (req, res, next) => {
 				message: "You are not authorized to perform actions on this paper",
 			});
 		}
-
 		next();
 	} catch (err) {
 		logWritter(`${req.ip}  Unauthorized request on route ${req.path}`);

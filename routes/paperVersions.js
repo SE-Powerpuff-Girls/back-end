@@ -5,7 +5,6 @@ const jwtGenerator = require("../utils/jwtGenerator");
 const validator = require("../middleware/validator");
 const authorization = require("../middleware/authorization");
 const canSeePaperVersion = require("../middleware/ownership/paperVersion");
-const res = require("express/lib/response");
 
 // get a paper version
 router.get("/:paperversionid", authorization, canSeePaperVersion, async (req, res) => {
@@ -18,16 +17,6 @@ router.get("/:paperversionid", authorization, canSeePaperVersion, async (req, re
 			});
 		}
 		return res.status(200).json(rows[0]);
-	} catch (err) {
-		console.log(err.message);
-		res.status(500).send("Server error");
-	}
-});
-
-// update a paper version
-router.put("/:paperversionid", authorization, canSeePaperVersion, async (req, res) => {
-	try {
-		res.send("Not implemented");
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -56,7 +45,7 @@ router.delete("/:paperversionid", authorization, canSeePaperVersion, async (req,
 router.get("/:paperversionid/keywords", authorization, canSeePaperVersion, async (req, res) => {
 	try {
 		const { paperversionid } = req.params;
-		const { rows } = await pool.query("SELECT * FROM paperversionkeywords WHERE paperversionid = $1", [paperversionid]);
+		const { rows } = await pool.query("SELECT * FROM keywords WHERE paperversionid = $1", [paperversionid]);
 		if (rows.length === 0) {
 			return res.status(404).json({
 				message: "Paper version not found",
@@ -74,38 +63,13 @@ router.post("/:paperversionid/keywords", authorization, canSeePaperVersion, asyn
 	try {
 		const { paperversionid } = req.params;
 		const { keyword } = req.body;
-		const { rows } = await pool.query("INSERT INTO paperversionkeywords (paperversionid, keyword) VALUES ($1, $2) RETURNING *", [
-			paperversionid,
-			keyword,
-		]);
+		const { rows } = await pool.query("INSERT INTO keywords (paperversionid, keyword) VALUES ($1, $2) RETURNING *", [paperversionid, keyword]);
 		if (rows.length === 0) {
 			return res.status(404).json({
 				message: "Paper version not found",
 			});
 		}
-		return res.status(200).json(rows[0]);
-	} catch (err) {
-		console.log(err.message);
-		res.status(500).send("Server error");
-	}
-});
-
-// update a keyword
-router.put("/:paperversionid/keywords/:keywordid", authorization, canSeePaperVersion, async (req, res) => {
-	try {
-		const { paperversionid, keywordid } = req.params;
-		const { keyword } = req.body;
-		const { rows } = await pool.query("UPDATE paperversionkeywords SET keyword = $1 WHERE paperversionid = $2 AND keywordid = $3 RETURNING *", [
-			keyword,
-			paperversionid,
-			keywordid,
-		]);
-		if (rows.length === 0) {
-			return res.status(404).json({
-				message: "Paper version not found",
-			});
-		}
-		return res.status(200).json(rows[0]);
+		return res.status(201).json(rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -116,10 +80,7 @@ router.put("/:paperversionid/keywords/:keywordid", authorization, canSeePaperVer
 router.delete("/:paperversionid/keywords/:keywordid", authorization, canSeePaperVersion, async (req, res) => {
 	try {
 		const { paperversionid, keywordid } = req.params;
-		const { rows } = await pool.query("DELETE FROM paperversionkeywords WHERE paperversionid = $1 AND keywordid = $2 RETURNING *", [
-			paperversionid,
-			keywordid,
-		]);
+		const { rows } = await pool.query("DELETE FROM keywords WHERE paperversionid = $1 AND keywordid = $2 RETURNING *", [paperversionid, keywordid]);
 		if (rows.length === 0) {
 			return res.status(404).json({
 				message: "Paper version not found",
@@ -176,29 +137,7 @@ router.post("/:paperversionid/topics", authorization, canSeePaperVersion, async 
 				message: "Paper version not found",
 			});
 		}
-		return res.status(200).json(rows[0]);
-	} catch (err) {
-		console.log(err.message);
-		res.status(500).send("Server error");
-	}
-});
-
-// updatea a topic
-router.put("/:paperversionid/topics/:topicid", authorization, canSeePaperVersion, async (req, res) => {
-	try {
-		const { paperversionid, topicid } = req.params;
-		const { topic } = req.body;
-		const { rows } = await pool.query("UPDATE paperversiontopics SET topic = $1 WHERE paperversionid = $2 AND topicid = $3 RETURNING *", [
-			topic,
-			paperversionid,
-			topicid,
-		]);
-		if (rows.length === 0) {
-			return res.status(404).json({
-				message: "Paper version not found",
-			});
-		}
-		return res.status(200).json(rows[0]);
+		return res.status(201).json(rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -224,11 +163,12 @@ router.delete("/:paperversionid/topics/:topicid", authorization, canSeePaperVers
 		res.status(500).send("Server error");
 	}
 });
+
 // get all evaluations for a paper version
 router.get("/:paperversionid/evaluations", authorization, canSeePaperVersion, async (req, res) => {
 	try {
 		const { paperversionid } = req.params;
-		const { rows } = await pool.query("SELECT * FROM evaluation WHERE paperversionid = $1", [paperversionid]);
+		const { rows } = await pool.query("SELECT * FROM evaluations WHERE paperversionid = $1", [paperversionid]);
 		if (rows.length === 0) {
 			return res.status(404).json({
 				message: "Paper version not found",
@@ -245,7 +185,7 @@ router.post("/:paperversionid/evaluations", authorization, canSeePaperVersion, a
 	try {
 		const { paperversionid } = req.params;
 		const { evaluation } = req.body;
-		const { rows } = await pool.query("INSERT INTO evaluation (paperversionid, evaluation) VALUES ($1, $2) RETURNING *", [
+		const { rows } = await pool.query("INSERT INTO evaluations (paperversionid, evaluation) VALUES ($1, $2) RETURNING *", [
 			paperversionid,
 			evaluation,
 		]);
@@ -254,7 +194,7 @@ router.post("/:paperversionid/evaluations", authorization, canSeePaperVersion, a
 				message: "Paper version not found",
 			});
 		}
-		return res.status(200).json(rows[0]);
+		return res.status(201).json(rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -265,29 +205,7 @@ router.post("/:paperversionid/evaluations", authorization, canSeePaperVersion, a
 router.get("/:paperversionid/evaluations/:evaluationid", authorization, canSeePaperVersion, async (req, res) => {
 	try {
 		const { paperversionid, evaluationid } = req.params;
-		const { rows } = await pool.query("SELECT * FROM evaluation WHERE paperversionid = $1 AND evaluationid = $2", [paperversionid, evaluationid]);
-		if (rows.length === 0) {
-			return res.status(404).json({
-				message: "Paper version not found",
-			});
-		}
-		return res.status(200).json(rows[0]);
-	} catch (err) {
-		console.log(err.message);
-		res.status(500).send("Server error");
-	}
-});
-
-// create an evaluation
-router.post("/:paperversionid/evaluations/:evaluationid", authorization, canSeePaperVersion, async (req, res) => {
-	try {
-		const { paperversionid, evaluationid } = req.params;
-		const { evaluation } = req.body;
-		const { rows } = await pool.query("UPDATE evaluation SET evaluation = $1 WHERE paperversionid = $2 AND evaluationid = $3 RETURNING *", [
-			evaluation,
-			paperversionid,
-			evaluationid,
-		]);
+		const { rows } = await pool.query("SELECT * FROM evaluations WHERE paperversionid = $1 AND evaluationid = $2", [paperversionid, evaluationid]);
 		if (rows.length === 0) {
 			return res.status(404).json({
 				message: "Paper version not found",
@@ -303,7 +221,7 @@ router.post("/:paperversionid/evaluations/:evaluationid", authorization, canSeeP
 router.get("/:paperversionid/publiccomments", authorization, canSeePaperVersion, async (req, res) => {
 	try {
 		const { paperversionid } = req.params;
-		const { rows } = await pool.query("SELECT * FROM commenta WHERE paperversionid = $1 AND public = TRUE", [paperversionid]);
+		const { rows } = await pool.query("SELECT * FROM comments WHERE paperversionid = $1 AND public = TRUE", [paperversionid]);
 		if (rows.length === 0) {
 			return res.status(404).json({
 				message: "Paper version not found",

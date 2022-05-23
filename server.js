@@ -25,6 +25,14 @@ app.get("*", async (req, res) => {
 
 logWritter("Server started");
 // Starting server
+// exit codes
+// 200 - OK
+// 201 - Created
+// 400 - Bad Request
+// 401 - Unauthorized
+// 403 - Forbidden
+// 500 - Internal Server Error
+
 app.listen(app.get("port"), function () {
 	console.log(`Starting server on port ${app.get("port")}`);
 });

@@ -155,7 +155,7 @@ router.post("/:conferencesessionid/papers/", authorization, conferenSesessionIsO
 				message: "Paper not found",
 			});
 		}
-		return res.status(200).json({
+		return res.status(201).json({
 			message: "Paper added to session",
 		});
 	} catch (err) {

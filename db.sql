@@ -143,7 +143,7 @@ CREATE TABLE ConflictOfInterests(
   CONSTRAINT FK_ConflictOfInterest_Reviewer FOREIGN KEY (ReviewerID) REFERENCES Participations(ParticipationID)
 ); 
 
-CREATE TABLE Evaluation(
+CREATE TABLE Evaluations(
   EvaluationID uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   PaperVersionID uuid NOT NULL,
   ReviewerToPaperID uuid NOT NULL,

@@ -5,6 +5,10 @@ const jwtGenerator = require("../utils/jwtGenerator");
 const validator = require("../middleware/validator");
 const authorization = require("../middleware/authorization");
 //const logWritter = require("../utils/logWritter");
+const multer = require("multer");
+const addFile = require("../utils/fileUpload");
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage }).single("file");
 
 router.post("/register", validator, async (req, res) => {
 	try {
@@ -16,7 +20,6 @@ router.post("/register", validator, async (req, res) => {
 				message: "User already exists",
 			});
 		}
-
 		const saltRounds = 10;
 		const genSalt = await bcrypt.genSalt(saltRounds);
 		const hash = await bcrypt.hash(password, genSalt);
@@ -29,7 +32,7 @@ router.post("/register", validator, async (req, res) => {
 		]);
 
 		const token = jwtGenerator(newUser.rows[0].userid, newUser.rows[0].firstname, newUser.rows[0].lastname, newUser.rows[0].email);
-		res.json({ token, newUser });
+		res.status(201).json({ token, newUser });
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send(err.message);
@@ -67,7 +70,7 @@ router.post("/login", validator, async (req, res) => {
 			adress: user.rows[0].address,
 			photolink: user.rows[0].photolink,
 		};
-		res.json({ token, output });
+		res.status(201).json({ token, output });
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send(err.message);
@@ -101,10 +104,38 @@ router.get("/:userid", async (req, res) => {
 });
 
 // update an user
-router.put("/:userid", authorization, async (req, res) => {
+router.put("/:userid", authorization, upload, async (req, res) => {
 	try {
 		const { firstName, lastName, title, gender, nationality, adress } = req.body;
-		res.send("Not implemented");
+		const user = pool.query("SELECT * FROM users where userid = $1", [req.params.userid]);
+		if (firstName == null || firstName == undefined) {
+			firstName = user.rows[0].firstname;
+		}
+		if (lastName == null || lastName == undefined) {
+			lastName = user.rows[0].lastname;
+		}
+		if (title == null || title == undefined) {
+			title = user.rows[0].title;
+		}
+		if (gender == null || gender == undefined) {
+			gender = user.rows[0].gender;
+		}
+		if (nationality == null || nationality == undefined) {
+			nationality = user.rows[0].nationality;
+		}
+		if (adress == null || adress == undefined) {
+			adress = user.rows[0].adress;
+		}
+
+		let url = await addFile(req.file);
+		if (url == null) {
+			url = "";
+		}
+		let updated_user = pool.query(
+			"UPDATE users SET firstname = $1, lastname = $2, title = $3, gender = $4, nationality = $5, adress = $6, photolink = $7 WHERE userid = $8 RETURNING *",
+			[firstName, lastName, title, gender, nationality, adress, url, req.params.userid]
+		);
+		res.status(201).send(updated_user.rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send(err.message);
@@ -131,15 +162,7 @@ router.delete("/:userid", authorization, async (req, res) => {
 router.get("/:userid/topics", async (req, res) => {
 	try {
 		const topics = await pool.query("SELECT * FROM usertopics WHERE userid = $1", [req.params.userid]);
-		output = [];
-		topics.rows.forEach((topic) => {
-			console.log(topic);
-			output.push({
-				name: topic.name,
-			});
-		});
-		console.log(output);
-		res.status(200).json(output);
+		res.status(200).json(topics.rows);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send(err.message);
@@ -156,33 +179,7 @@ router.post("/:userid/topics", authorization, async (req, res) => {
 		}
 		const text = req.body.name;
 		const topic = await pool.query("INSERT INTO usertopics (userid, name) VALUES ($1, $2) RETURNING *", [req.params.userid, text]);
-		res.status(200).json("Topic added");
-	} catch (err) {
-		console.log(err.message);
-		res.status(500).send(err.message);
-	}
-});
-
-// updatea a topic
-router.put("/:userid/topics/:topicid", authorization, async (req, res) => {
-	try {
-		if (req.userid !== req.params.userid) {
-			return res.status(403).json({
-				message: "You are not authorized to update this topic",
-			});
-		}
-		const { text } = req.body;
-		const topic = await pool.query("UPDATE usertopics SET text = $1 WHERE topicid = $2 AND userid = $3 RETURNING *", [
-			text,
-			req.params.topicid,
-			req.params.userid,
-		]);
-		if (topic.rows.length === 0) {
-			return res.status(404).json({
-				message: "Topic does not exist or you are not the owner",
-			});
-		}
-		res.json("Topic updated");
+		res.status(201).json("Topic added");
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send(err.message);
@@ -203,7 +200,7 @@ router.delete("/:userid/topics/:topicid", authorization, async (req, res) => {
 				message: "Topic does not exist or you are not the owner",
 			});
 		}
-		res.send("Topic Deleted");
+		res.status(200).send("Topic Deleted");
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send(err.message);

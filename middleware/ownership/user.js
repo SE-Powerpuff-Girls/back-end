@@ -5,7 +5,7 @@ module.exports = async (req, res, next) => {
 	try {
 		if (req.userid !== req.params.userid) {
 			return res.status(403).json({
-				message: "You are not authorized to delete this user",
+				message: "You are not authorized to perform actions on this user",
 			});
 		}
 		next();

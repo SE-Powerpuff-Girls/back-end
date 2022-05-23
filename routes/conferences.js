@@ -2,12 +2,16 @@ const router = require("express").Router();
 const { pool } = require("../database");
 const authorization = require("../middleware/authorization");
 const ownershipConference = require("../middleware/ownership/conference");
+const multer = require("multer");
+const addFile = require("../utils/fileUpload");
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage }).single("file");
 
 // get all conferences
 router.get("/", async (req, res) => {
 	try {
 		const conferences = await pool.query("SELECT * FROM conferences");
-		res.json(conferences.rows);
+		res.status(200).json(conferences.rows);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -15,17 +19,31 @@ router.get("/", async (req, res) => {
 });
 
 // create conference
-router.post("/", authorization, async (req, res) => {
+router.post("/", authorization, upload, async (req, res) => {
 	try {
-		const { name } = req.body;
-		const conference = await pool.query("INSERT INTO conferences (name, creatorid) VALUES ($1, $2) RETURNING *", [name, req.userid]);
-		// user authomaticall becomes chair
+		// 	CreatorID uuid NOT NULL,
+		// Name VARCHAR(255) NOT NULL,
+		// URL VARCHAR(255),
+		// Subtitles VARCHAR(255),
+		// ContactInformation VARCHAR(255),
+
+		const { creatorid, name, url, subtitles, contactInformation } = req.body;
+		let file_url = await addFile(req.file);
+		if (file_url == null) {
+			file_url = "";
+		}
+		const conference = await pool.query(
+			"INSERT INTO conferences (creatorid, name, url, subtitles, contactinformation, photolink) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+			[creatorid, name, url, subtitles, contactInformation, file_url]
+		);
+
+		// // user authomaticall becomes chair
 		await pool.query("INSERT INTO participations (userid, conferenceid, ParticipationType) VALUES ($1, $2, $3)", [
 			req.userid,
 			conference.rows[0].conferenceid,
 			"Chair",
 		]);
-		res.json(conference.rows[0].conferenceid + " has been created by " + req.userid);
+		res.status(201).json(conference.rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -40,7 +58,7 @@ router.get("/:conferenceid", async (req, res) => {
 	try {
 		const { conferenceid } = req.params;
 		const conference = await pool.query("SELECT * FROM conferences WHERE conferenceid = $1", [conferenceid]);
-		res.json(conference.rows[0]);
+		res.status(200).json(conference.rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -48,18 +66,8 @@ router.get("/:conferenceid", async (req, res) => {
 });
 
 // update a conference
-router.put("/:conferenceid", authorization, ownershipConference, async (req, res) => {
+router.put("/:conferenceid", authorization, ownershipConference, upload, async (req, res) => {
 	try {
-		/*
-		Name VARCHAR(255) NOT NULL,
-  URL VARCHAR(255),
-  Subtitles VARCHAR(255),
-  ContactInformation VARCHAR(255),
-  DeadlinePaperSubmission DATE,
-  DeadlinePaperreview DATE,
-  DeadlineAcceptanceNotification DATE,
-  DeadlineAcceptedPaperUpload DATE,
-	*/
 		const {
 			name,
 			url,
@@ -93,8 +101,12 @@ router.put("/:conferenceid", authorization, ownershipConference, async (req, res
 		if (deadlineacceptedpaperupload == null) {
 			deadlineacceptedpaperupload = conference.rows[0].deadlineacceptedpaperupload;
 		}
+		let file_url = await addFile(req.file);
+		if (file_url == null) {
+			file_url = "";
+		}
 		const update = await pool.query(
-			"UPDATE conferences SET name = $1, url = $2, subtitles = $3, contactinformation = $4, deadlinepapersubmission = $5, deadlinepaperreview = $6, deadlineacceptancenotification = $7, deadlineacceptedpaperupload = $8 WHERE conferenceid = $9 RETURNING *",
+			"UPDATE conferences SET name = $1, url = $2, subtitles = $3, contactinformation = $4, deadlinepapersubmission = $5, deadlinepaperreview = $6, deadlineacceptancenotification = $7, deadlineacceptedpaperupload = $8, photolink = $9 WHERE conferenceid = $10 RETURNING *",
 			[
 				name,
 				url,
@@ -104,10 +116,11 @@ router.put("/:conferenceid", authorization, ownershipConference, async (req, res
 				deadlinepaperreview,
 				deadlineacceptancenotification,
 				deadlineacceptedpaperupload,
+				file_url,
 				conferenceid,
 			]
 		);
-		res.json(update.rows[0]);
+		res.status(201).json(update.rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -119,7 +132,7 @@ router.delete("/:conferenceid", authorization, ownershipConference, async (req, 
 	try {
 		const { conferenceid } = req.params;
 		const conference = await pool.query("DELETE FROM conferences WHERE conferenceid = $1", [conferenceid]);
-		res.send("Conference Deleted");
+		res.status(200).send("Conference Deleted");
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -131,13 +144,7 @@ router.get("/:conferenceid/topics", async (req, res) => {
 	try {
 		const { conferenceid } = req.params;
 		const topics = await pool.query("SELECT * FROM conferencetopics WHERE conferenceid = $1", [conferenceid]);
-		output = [];
-		topics.rows.forEach((topic) => {
-			output.push({
-				text: topic.text,
-			});
-		});
-		res.json(output);
+		res.status(200).json(topics.rows);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -150,28 +157,7 @@ router.post("/:conferenceid/topics", authorization, ownershipConference, async (
 		const { conferenceid } = req.params;
 		const { text } = req.body;
 		const topic = await pool.query("INSERT INTO conferencetopics (conferenceid, text) VALUES ($1, $2) RETURNING *", [conferenceid, text]);
-		res.json(topic.rows[0].conferencetopicid + " has been created by " + req.userid);
-	} catch (err) {
-		console.log(err.message);
-		res.status(500).send("Server error");
-	}
-});
-
-// update a topic
-router.put("/:conferenceid/topics/:topicid", authorization, ownershipConference, async (req, res) => {
-	try {
-		const { text } = req.body;
-		const topic = await pool.query("UPDATE conferencetopics SET text = $1 WHERE topicid = $2 AND conferenceid = $3 RETURNING *", [
-			text,
-			req.params.topicid,
-			req.params.conferenceid,
-		]);
-		if (topic.rows.length === 0) {
-			return res.status(404).json({
-				message: "Topic does not exist or you are not the owner",
-			});
-		}
-		res.json(topic.rows[0].conferencetopicid + " has been updated by " + req.userid);
+		res.status(201).json(topic.rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -188,7 +174,7 @@ router.delete("/:conferenceid/topics/:topicid", authorization, ownershipConferen
 				message: "Topic does not exist or you are not the owner",
 			});
 		}
-		res.json(topic.rows[0].conferencetopicid + " has been deleted by " + req.userid);
+		res.status(200).json(topic.rows[0].conferencetopicid + " has been deleted by " + req.userid);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -200,9 +186,9 @@ router.get("/:conferenceid/conferencesessions", async (req, res) => {
 	try {
 		const sessions = await pool.query("SELECT * FROM conferencesessions WHERE conferenceid = $1", [req.params.conferenceid]);
 		if (sessions.rows.length === 0) {
-			res.json("No sessions found");
+			res.status(404).json("No sessions found");
 		}
-		res.json(sessions.rows);
+		res.status(200).json(sessions.rows);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -219,7 +205,7 @@ router.post("/:conferenceid/conferencesessions", authorization, ownershipConfere
 			description,
 			req.params.conferenceid,
 		]);
-		res.json(session.rows[0].conferencesessionid + " has been created by " + req.userid);
+		res.status(201).json(session.rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -234,7 +220,7 @@ router.get("/:conferenceid/participants", async (req, res) => {
 		if (participants.rows.length === 0) {
 			res.json("No participants found");
 		}
-		res.json(participants.rows);
+		res.status(200).json(participants.rows);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -256,7 +242,7 @@ router.post("/:conferenceid/participants", authorization, async (req, res) => {
 			conferenceid,
 			participationType,
 		]);
-		res.json(participant.rows[0].participationid + " has been created by " + req.userid);
+		res.status(201).json(participant.rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -270,9 +256,9 @@ router.get("/:conferenceid/participants/authors", async (req, res) => {
 			req.params.conferenceid,
 		]);
 		if (authors.rows.length === 0) {
-			res.json("No authors found");
+			res.status(404).json("No authors found");
 		}
-		res.json(authors.rows);
+		res.status(200).json(authors.rows);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -286,9 +272,9 @@ router.get("/:conferenceid/participants/reviewers", async (req, res) => {
 			req.params.conferenceid,
 		]);
 		if (reviewers.rows.length === 0) {
-			res.json("No reviewers found");
+			res.status(404).json("No reviewers found");
 		}
-		res.json(reviewers.rows);
+		res.status(200).json(reviewers.rows);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -302,9 +288,9 @@ router.get("/:conferenceid/participants/chairs", async (req, res) => {
 			req.params.conferenceid,
 		]);
 		if (chairs.rows.length === 0) {
-			res.json("No chairs found");
+			res.status(404).json("No chairs found");
 		}
-		res.json(chairs.rows);
+		res.status(200).json(chairs.rows);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -319,12 +305,12 @@ router.get("/:conferenceid/participants/:participantid", async (req, res) => {
 			req.params.participantid,
 		]);
 		if (participant.rows.length === 0) {
-			res.json("No participant found");
+			res.status(404).json("No participant found");
 		}
 		// get user
 		const user = await pool.query("SELECT * FROM Users WHERE userid = $1", [participant.rows[0].userid]);
 		if (user.rows.length === 0) {
-			res.status(500).json("Something went wrong");
+			res.status(404).json("Something went wrong");
 		}
 		output = {
 			userid: user.rows[0].userid,
@@ -337,7 +323,7 @@ router.get("/:conferenceid/participants/:participantid", async (req, res) => {
 			adress: user.rows[0].adress,
 			photolink: user.rows[0].photolink,
 		};
-		res.json(output);
+		res.status(200).json(output);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -349,9 +335,9 @@ router.get("/:conferenceid/papers/public", async (req, res) => {
 	try {
 		const papers = await pool.query("SELECT * FROM Papers WHERE conferenceid = $1 AND accepted = 'yes'", [req.params.conferenceid]);
 		if (papers.rows.length === 0) {
-			res.json("No papers found");
+			res.status(404).json("No papers found");
 		}
-		res.json(papers.rows);
+		res.status(200).json(papers.rows);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -365,15 +351,15 @@ router.get("/:conferenceid/papers/reviewer", authorization, async (req, res) => 
 			[req.userid, req.params.conferenceid]
 		);
 		if (isReviewer.rows.length === 0) {
-			return res.status(400).json({
+			return res.status(403).json({
 				message: "You are not a reviewer for this conference",
 			});
 		}
 		const papers = await pool.query("SELECT * FROM Papers WHERE conferenceid = $1", [req.params.conferenceid]);
 		if (papers.rows.length === 0) {
-			res.json("No papers found");
+			res.status(404).json("No papers found");
 		}
-		res.json(papers.rows);
+		res.status(200).json(papers.rows);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
@@ -385,16 +371,17 @@ router.get("/:conferenceid/papers/author", authorization, async (req, res) => {
 		const papersIds = await pool.query("SELECT paperid FROM authorstopapers WHERE userid = $1", [req.userid]);
 		const papers = await pool.query("SELECT * FROM Papers WHERE paperid = ANY($1)", [papersIds.rows]);
 		if (papers.rows.length === 0) {
-			res.json("No papers found");
+			res.status(404).json("No papers found");
 		}
-		res.json(papers.rows);
+		res.status(200).json(papers.rows);
 	} catch (err) {
 		console.log(err.message);
 		res.status(500).send("Server error");
 	}
 });
+
 // create a new paper for a conference
-router.post("/:conferenceid/papers/", async (req, res) => {
+router.post("/:conferenceid/papers/", authorization, async (req, res) => {
 	try {
 		const isAuthor = await pool.query("SELECT * FROM Participations WHERE userid = $1 AND conferenceid = $2 AND participationtype = 'Author'", [
 			req.userid,
@@ -407,6 +394,21 @@ router.post("/:conferenceid/papers/", async (req, res) => {
 		}
 		const newPaper = await pool.query("INSERT INTO papers (conferenceid) VALUES ($1) RETURNING *", [req.params.conferenceid]);
 		const author = await pool.query("INSERT INTO authorstopapers (paperid, userid) VALUES ($1, $2)", [newPaper.rows[0].paperid, req.userid]);
+		// append a random reviewer
+		const reviewers = await pool.query("SELECT * FROM Participations WHERE conferenceid = $1 AND participationtype = 'Reviewer'", [
+			req.params.conferenceid,
+		]);
+		if (reviewers.rows.length === 0) {
+			return res.status(400).json({
+				message: "No reviewers found",
+			});
+		}
+		const reviewer = reviewers.rows[Math.floor(Math.random() * reviewers.rows.length)];
+		const reviewerPaper = await pool.query("INSERT INTO reviewerstopapers (paperid, userid) VALUES ($1, $2)", [
+			newPaper.rows[0].paperid,
+			reviewer.userid,
+		]);
+
 		res.json(newPaper.rows[0]);
 	} catch (err) {
 		console.log(err.message);
