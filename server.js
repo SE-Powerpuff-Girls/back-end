@@ -46,7 +46,7 @@ app.post("/testput", async (req, res) => {
 	} catch (err) {
 		console.log(err.message);
 		logWritter(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send(err.message);
 	}
 });
 
@@ -63,7 +63,7 @@ app.get("/testget", async (req, res) => {
 	} catch (err) {
 		console.log(err.message);
 		logWritter(err.message);
-		res.status(500).send("Server error");
+		res.status(500).send(err.message);
 	}
 });
 
