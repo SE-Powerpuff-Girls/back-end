@@ -6,6 +6,7 @@ module.exports = async (req, res, next) => {
 		const { conferencesessionid } = req.params;
 		const { conference } = await pool.query("SELECT * FROM conferencesessions WHERE conferencesessionid = $1", [conferencesessionid]);
 		if (rows.length === 0) {
+			logWritter("conferenceSession", "get", req.userid, req.params.conferenceid, "fail");
 			return res.status(404).json({
 				message: "Conference session not found",
 			});
@@ -18,10 +19,12 @@ module.exports = async (req, res, next) => {
 			"Chair",
 		]);
 		if (!ischair.rows[0] && !isOwner.rows[0]) {
+			logWritter("conferenceSession", "get", req.userid, req.params.conferenceid, "fail");
 			return res.status(403).json({
 				message: "You are not authorized to perform actions on this conference Session",
 			});
 		}
+		logWritter("conferenceSession", "get", req.userid, req.params.conferenceid, "success");
 		next();
 	} catch (err) {
 		logWritter(`${req.ip}  Unauthorized request on route ${req.path}`);

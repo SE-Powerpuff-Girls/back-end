@@ -13,12 +13,12 @@ module.exports = async (req, res, next) => {
 		}
 		const decoded = jwt.verify(token, process.env.JWT_SECRET);
 		req.userid = decoded.userid;
-		if (req.userid != req.params.userid && req.userid != req.body.userid) {
-			logWritter(`${req.ip}  Unauthorized request on route ${req.path}`);
-			return res.status(403).json({
-				message: "You are not authorized to perform actions on this user",
-			});
-		}
+		// if (req.userid != req.params.userid && req.userid != req.body.userid) {
+		// 	logWritter(`${req.ip}  Unauthorized request on route ${req.path}`);
+		// 	return res.status(403).json({
+		// 		message: "You are not authorized to perform actions on this user",
+		// 	});
+		// }
 		logWritter(`${req.ip},  Authorized as user ${req.userid} for route ${req.path}`);
 		next();
 	} catch (err) {

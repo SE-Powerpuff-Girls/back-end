@@ -5,6 +5,7 @@ const jwtGenerator = require("../utils/jwtGenerator");
 const validator = require("../middleware/validator");
 const authorization = require("../middleware/authorization");
 const canSeePaperVersion = require("../middleware/ownership/paperVersion");
+const logWritter = require("../utils/logWritter");
 
 // get a paper version
 router.get("/:paperversionid", authorization, canSeePaperVersion, async (req, res) => {
@@ -12,13 +13,16 @@ router.get("/:paperversionid", authorization, canSeePaperVersion, async (req, re
 		const { paperversionid } = req.params;
 		const { rows } = await pool.query("SELECT * FROM paperversions WHERE paperversionid = $1", [paperversionid]);
 		if (rows.length === 0) {
+			logWritter(`paper version ${paperversionid} not found`);
 			return res.status(404).json({
 				message: "Paper version not found",
 			});
 		}
+		logWritter(`paper version ${paperversionid} found`);
 		return res.status(200).json(rows[0]);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -28,15 +32,18 @@ router.delete("/:paperversionid", authorization, canSeePaperVersion, async (req,
 		const { paperversionid } = req.params;
 		const paperversion = await pool.query("DELETE FROM paperversions WHERE paperversionid = $1 RETURNING *", [paperversionid]);
 		if (paperversion.rowCount === 0) {
+			logWritter(`paper version ${paperversionid} not found`);
 			return res.status(404).json({
 				message: "Paper version not found",
 			});
 		}
+		logWritter(`paper version ${paperversionid} deleted`);
 		return res.status(200).json({
 			message: "Paper version deleted",
 		});
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -47,13 +54,16 @@ router.get("/:paperversionid/keywords", authorization, canSeePaperVersion, async
 		const { paperversionid } = req.params;
 		const { rows } = await pool.query("SELECT * FROM keywords WHERE paperversionid = $1", [paperversionid]);
 		if (rows.length === 0) {
+			logWritter(`paper version ${paperversionid} has no keywords`);
 			return res.status(404).json({
 				message: "Paper version not found",
 			});
 		}
+		logWritter(`paper version ${paperversionid} has keywords`);
 		return res.status(200).json(rows);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -65,13 +75,16 @@ router.post("/:paperversionid/keywords", authorization, canSeePaperVersion, asyn
 		const { keyword } = req.body;
 		const { rows } = await pool.query("INSERT INTO keywords (paperversionid, keyword) VALUES ($1, $2) RETURNING *", [paperversionid, keyword]);
 		if (rows.length === 0) {
+			logWritter(`paper version ${paperversionid} not found`);
 			return res.status(404).json({
 				message: "Paper version not found",
 			});
 		}
+		logWritter(`added keyword to paper version ${paperversionid}`);
 		return res.status(201).json(rows[0]);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -82,13 +95,16 @@ router.delete("/:paperversionid/keywords/:keywordid", authorization, canSeePaper
 		const { paperversionid, keywordid } = req.params;
 		const { rows } = await pool.query("DELETE FROM keywords WHERE paperversionid = $1 AND keywordid = $2 RETURNING *", [paperversionid, keywordid]);
 		if (rows.length === 0) {
+			logWritter(`paper version ${paperversionid} has no keywords`);
 			return res.status(404).json({
 				message: "Paper version not found",
 			});
 		}
+		logWritter(`deleted keyword from paper version ${paperversionid}`);
 		return res.status(200).json(rows[0]);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -99,29 +115,16 @@ router.get("/:paperversionid/topics", authorization, canSeePaperVersion, async (
 		const { paperversionid } = req.params;
 		const { rows } = await pool.query("SELECT * FROM paperversiontopics WHERE paperversionid = $1", [paperversionid]);
 		if (rows.length === 0) {
+			logWritter(`paper version ${paperversionid} has no topics`);
 			return res.status(404).json({
 				message: "Paper version not found",
 			});
 		}
+		logWritter(`paper version ${paperversionid} has topics`);
 		return res.status(200).json(rows);
 	} catch (err) {
 		console.log(err.message);
-		res.status(500).send("Server error");
-	}
-});
-
-router.get("/:paperversionid/topics", authorization, canSeePaperVersion, async (req, res) => {
-	try {
-		const { paperversionid } = req.params;
-		const { rows } = await pool.query("SELECT * FROM paperversiontopics WHERE paperversionid = $1", [paperversionid]);
-		if (rows.length === 0) {
-			return res.status(404).json({
-				message: "Paper version not found",
-			});
-		}
-		return res.status(200).json(rows);
-	} catch (err) {
-		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -133,13 +136,16 @@ router.post("/:paperversionid/topics", authorization, canSeePaperVersion, async 
 		const { topic } = req.body;
 		const { rows } = await pool.query("INSERT INTO paperversiontopics (paperversionid, topic) VALUES ($1, $2) RETURNING *", [paperversionid, topic]);
 		if (rows.length === 0) {
+			logWritter(`paper version ${paperversionid} not found`);
 			return res.status(404).json({
 				message: "Paper version not found",
 			});
 		}
+		logWritter(`added topic to paper version ${paperversionid}`);
 		return res.status(201).json(rows[0]);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -153,13 +159,16 @@ router.delete("/:paperversionid/topics/:topicid", authorization, canSeePaperVers
 			topicid,
 		]);
 		if (rows.length === 0) {
+			logWritter(`paper version ${paperversionid} has no topics`);
 			return res.status(404).json({
 				message: "Paper version not found",
 			});
 		}
+		logWritter(`deleted topic from paper version ${paperversionid}`);
 		return res.status(200).json(rows[0]);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -170,13 +179,16 @@ router.get("/:paperversionid/evaluations", authorization, canSeePaperVersion, as
 		const { paperversionid } = req.params;
 		const { rows } = await pool.query("SELECT * FROM evaluations WHERE paperversionid = $1", [paperversionid]);
 		if (rows.length === 0) {
+			logWritter(`paper version ${paperversionid} has no evaluations`);
 			return res.status(404).json({
 				message: "Paper version not found",
 			});
 		}
+		logWritter(`paper version ${paperversionid} has evaluations`);
 		return res.status(200).json(rows);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -190,13 +202,16 @@ router.post("/:paperversionid/evaluations", authorization, canSeePaperVersion, a
 			evaluation,
 		]);
 		if (rows.length === 0) {
+			logWritter(`paper version ${paperversionid} not found`);
 			return res.status(404).json({
 				message: "Paper version not found",
 			});
 		}
+		logWritter(`added evaluation to paper version ${paperversionid}`);
 		return res.status(201).json(rows[0]);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -207,13 +222,16 @@ router.get("/:paperversionid/evaluations/:evaluationid", authorization, canSeePa
 		const { paperversionid, evaluationid } = req.params;
 		const { rows } = await pool.query("SELECT * FROM evaluations WHERE paperversionid = $1 AND evaluationid = $2", [paperversionid, evaluationid]);
 		if (rows.length === 0) {
+			logWritter(`paper version ${paperversionid} has no evaluations`);
 			return res.status(404).json({
 				message: "Paper version not found",
 			});
 		}
+		logWritter(`got evaluation from paper version ${paperversionid}`);
 		return res.status(200).json(rows[0]);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -223,13 +241,16 @@ router.get("/:paperversionid/publiccomments", authorization, canSeePaperVersion,
 		const { paperversionid } = req.params;
 		const { rows } = await pool.query("SELECT * FROM comments WHERE paperversionid = $1 AND public = TRUE", [paperversionid]);
 		if (rows.length === 0) {
+			logWritter(`paper version ${paperversionid} has no public comments`);
 			return res.status(404).json({
 				message: "Paper version not found",
 			});
 		}
+		logWritter(`got public comments from paper version ${paperversionid}`);
 		return res.status(200).json(rows);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });

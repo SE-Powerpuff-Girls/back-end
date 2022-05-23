@@ -26,10 +26,12 @@ module.exports = async (req, res, next) => {
 			req.params.paperid,
 		]);
 		if (!isAuthor.rows[0] && !isChair.rows[0] && !isReviewer.rows[0]) {
+			logWritter("evaluation", "get", req.userid, req.params.evaluationid, "fail");
 			return res.status(403).json({
 				message: "You are not authorized to perform actions on this paper",
 			});
 		}
+		logWritter("evaluation", "get", req.userid, req.params.evaluationid, "success");
 		next();
 	} catch (err) {
 		logWritter(`${req.ip}  Unauthorized request on route ${req.path}`);

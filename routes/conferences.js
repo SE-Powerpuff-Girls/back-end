@@ -6,14 +6,17 @@ const multer = require("multer");
 const addFile = require("../utils/fileUpload");
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage }).single("file");
+const logWritter = require("../utils/logWritter");
 
 // get all conferences
 router.get("/", async (req, res) => {
 	try {
 		const conferences = await pool.query("SELECT * FROM conferences");
+		logWritter("got all conferences");
 		res.status(200).json(conferences.rows);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -21,12 +24,6 @@ router.get("/", async (req, res) => {
 // create conference
 router.post("/", authorization, upload, async (req, res) => {
 	try {
-		// 	CreatorID uuid NOT NULL,
-		// Name VARCHAR(255) NOT NULL,
-		// URL VARCHAR(255),
-		// Subtitles VARCHAR(255),
-		// ContactInformation VARCHAR(255),
-
 		const { creatorid, name, url, subtitles, contactInformation } = req.body;
 		let file_url = await addFile(req.file);
 		if (file_url == null) {
@@ -43,9 +40,11 @@ router.post("/", authorization, upload, async (req, res) => {
 			conference.rows[0].conferenceid,
 			"Chair",
 		]);
+		logWritter("created conference", conference.rows[0].conferenceid);
 		res.status(201).json(conference.rows[0]);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -58,9 +57,18 @@ router.get("/:conferenceid", async (req, res) => {
 	try {
 		const { conferenceid } = req.params;
 		const conference = await pool.query("SELECT * FROM conferences WHERE conferenceid = $1", [conferenceid]);
+		if (conference.rowCount === 0) {
+			logWritter("conference not found", conferenceid);
+			return res.status(404).json({
+				message: "Conference not found",
+			});
+		}
+		logWritter("got one conference", conferenceid);
 		res.status(200).json(conference.rows[0]);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
+		logWritter("conference not found", req.params.conferenceid);
 		res.status(500).send("Server error");
 	}
 });
@@ -120,9 +128,11 @@ router.put("/:conferenceid", authorization, ownershipConference, upload, async (
 				conferenceid,
 			]
 		);
+		logWritter("updated conference", conferenceid);
 		res.status(201).json(update.rows[0]);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -135,6 +145,7 @@ router.delete("/:conferenceid", authorization, ownershipConference, async (req, 
 		res.status(200).send("Conference Deleted");
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -147,6 +158,7 @@ router.get("/:conferenceid/topics", async (req, res) => {
 		res.status(200).json(topics.rows);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -160,6 +172,7 @@ router.post("/:conferenceid/topics", authorization, ownershipConference, async (
 		res.status(201).json(topic.rows[0]);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -177,6 +190,7 @@ router.delete("/:conferenceid/topics/:topicid", authorization, ownershipConferen
 		res.status(200).json(topic.rows[0].conferencetopicid + " has been deleted by " + req.userid);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -191,6 +205,7 @@ router.get("/:conferenceid/conferencesessions", async (req, res) => {
 		res.status(200).json(sessions.rows);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -208,6 +223,7 @@ router.post("/:conferenceid/conferencesessions", authorization, ownershipConfere
 		res.status(201).json(session.rows[0]);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -223,6 +239,7 @@ router.get("/:conferenceid/participants", async (req, res) => {
 		res.status(200).json(participants.rows);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -245,6 +262,7 @@ router.post("/:conferenceid/participants", authorization, async (req, res) => {
 		res.status(201).json(participant.rows[0]);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -261,6 +279,7 @@ router.get("/:conferenceid/participants/authors", async (req, res) => {
 		res.status(200).json(authors.rows);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -277,6 +296,7 @@ router.get("/:conferenceid/participants/reviewers", async (req, res) => {
 		res.status(200).json(reviewers.rows);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -293,6 +313,7 @@ router.get("/:conferenceid/participants/chairs", async (req, res) => {
 		res.status(200).json(chairs.rows);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -326,6 +347,7 @@ router.get("/:conferenceid/participants/:participantid", async (req, res) => {
 		res.status(200).json(output);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -340,6 +362,7 @@ router.get("/:conferenceid/papers/public", async (req, res) => {
 		res.status(200).json(papers.rows);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -362,6 +385,7 @@ router.get("/:conferenceid/papers/reviewer", authorization, async (req, res) => 
 		res.status(200).json(papers.rows);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -376,6 +400,7 @@ router.get("/:conferenceid/papers/author", authorization, async (req, res) => {
 		res.status(200).json(papers.rows);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });
@@ -412,6 +437,7 @@ router.post("/:conferenceid/papers/", authorization, async (req, res) => {
 		res.json(newPaper.rows[0]);
 	} catch (err) {
 		console.log(err.message);
+		logWritter(err.message);
 		res.status(500).send("Server error");
 	}
 });

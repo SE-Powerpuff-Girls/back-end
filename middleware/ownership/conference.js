@@ -12,10 +12,12 @@ module.exports = async (req, res, next) => {
 			"Chair",
 		]);
 		if (!ischair.rows[0] && !isOwner.rows[0]) {
+			logWritter("conference", "get", req.userid, req.params.conferenceid, "fail");
 			return res.status(403).json({
 				message: "You are not authorized to perform actions on this conference",
 			});
 		}
+		logWritter("conference", "get", req.userid, req.params.conferenceid, "success");
 		next();
 	} catch (err) {
 		logWritter(`${req.ip}  Unauthorized request on route ${req.path}`);

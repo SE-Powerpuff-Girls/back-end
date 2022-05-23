@@ -30,10 +30,12 @@ module.exports = async (req, res, next) => {
 		let isAuthor = await pool.query("SELECT * FROM papers WHERE paperid = $1 AND authorid = $2", [paperid, participationid]);
 
 		if (!isChair.rows[0] && !isAuthor.rows[0] && !isReviewer.rows[0]) {
+			logWritter("evaluation", "get", req.userid, req.params.evaluationid, "fail");
 			return res.status(403).json({
 				message: "You are not authorized to perform actions on this evaluation",
 			});
 		}
+		logWritter("evaluation", "get", req.userid, req.params.evaluationid, "success");
 		next();
 	} catch (err) {
 		logWritter(`${req.ip}  Unauthorized request on route ${req.path}`);
