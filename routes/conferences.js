@@ -51,9 +51,6 @@ router.post("/", authorization, upload, async (req, res) => {
 
 // get one conference
 router.get("/:conferenceid", async (req, res) => {
-	console.log(req.params);
-	console.log(req.conferenceid);
-	console.log(req.body);
 	try {
 		const { conferenceid } = req.params;
 		const conference = await pool.query("SELECT * FROM conferences WHERE conferenceid = $1", [conferenceid]);
@@ -76,7 +73,7 @@ router.get("/:conferenceid", async (req, res) => {
 // update a conference
 router.put("/:conferenceid", authorization, ownershipConference, upload, async (req, res) => {
 	try {
-		const {
+		var {
 			name,
 			url,
 			subtitles,
@@ -181,7 +178,10 @@ router.post("/:conferenceid/topics", authorization, ownershipConference, async (
 router.delete("/:conferenceid/topics/:topicid", authorization, ownershipConference, async (req, res) => {
 	try {
 		const { topicid } = req.params;
-		const topic = await pool.query("DELETE FROM conferencetopics WHERE topicid = $1 AND conferenceid = $2", [topicid, req.params.conferenceid]);
+		const topic = await pool.query("DELETE FROM conferencetopics WHERE conferencetopicid = $1 AND conferenceid = $2 RETURNING *", [
+			topicid,
+			req.params.conferenceid,
+		]);
 		if (topic.rows.length === 0) {
 			return res.status(404).json({
 				message: "Topic does not exist or you are not the owner",
@@ -199,9 +199,9 @@ router.delete("/:conferenceid/topics/:topicid", authorization, ownershipConferen
 router.get("/:conferenceid/conferencesessions", async (req, res) => {
 	try {
 		const sessions = await pool.query("SELECT * FROM conferencesessions WHERE conferenceid = $1", [req.params.conferenceid]);
-		if (sessions.rows.length === 0) {
-			res.status(404).json("No sessions found");
-		}
+		// if (sessions.rows.length === 0) {
+		// 	return res.status(404).json("No sessions found");
+		// }
 		res.status(200).json(sessions.rows);
 	} catch (err) {
 		console.log(err.message);
@@ -247,7 +247,7 @@ router.get("/:conferenceid/participants", async (req, res) => {
 // add a new participant - should be called when a user registers for a conference
 router.post("/:conferenceid/participants", authorization, async (req, res) => {
 	try {
-		const { userid, participationType } = req.userid;
+		const { userid, participationType } = req.body;
 		const { conferenceid } = req.params;
 		if (!(participationType === "Author" || participationType === "Reviewer")) {
 			return res.status(400).json({
@@ -304,13 +304,35 @@ router.get("/:conferenceid/participants/reviewers", async (req, res) => {
 // get all the chairs for a conference
 router.get("/:conferenceid/participants/chairs", async (req, res) => {
 	try {
-		const chairs = await pool.query("SELECT * FROM Participations WHERE conferenceid = $1 AND participationtype = 'Chair'", [
+		// const chairs = await pool.query("SELECT * FROM Participations WHERE conferenceid = $1 AND participationtype = 'Chair'", [
+		// 	req.params.conferenceid,
+		// ]);
+		// if (chairs.rows.length === 0) {
+		// 	res.status(404).json("No chairs found");
+		// }
+		const chairAcc = await pool.query(
+			"SELECT * from users where userid in (SELECT userid FROM Participations WHERE conferenceid = $1 AND participationtype = 'Chair')",
+			[req.params.conferenceid]
+		);
+		res.status(200).json(chairAcc.rows);
+	} catch (err) {
+		console.log(err.message);
+		logWritter(err.message);
+		res.status(500).send("Server error");
+	}
+});
+
+//getting the role of a participant in a conference
+router.get("/:conferenceid/roles/:participantid", async (req, res) => {
+	try {
+		const participant = await pool.query("SELECT participationtype FROM Participations WHERE conferenceid = $1 AND userid = $2", [
 			req.params.conferenceid,
+			req.params.participantid,
 		]);
-		if (chairs.rows.length === 0) {
-			res.status(404).json("No chairs found");
+		if (participant.rows.length === 0) {
+			return res.status(200).send({ participationtype: "None" });
 		}
-		res.status(200).json(chairs.rows);
+		res.status(200).send(participant.rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		logWritter(err.message);
@@ -321,7 +343,7 @@ router.get("/:conferenceid/participants/chairs", async (req, res) => {
 // get a specific participant to the conference. Should return User
 router.get("/:conferenceid/participants/:participantid", async (req, res) => {
 	try {
-		const participant = await pool.query("SELECT * FROM Participations WHERE conferenceid = $1 AND participantid = $2", [
+		const participant = await pool.query("SELECT * FROM Participations WHERE conferenceid = $1 AND userid  = $2", [
 			req.params.conferenceid,
 			req.params.participantid,
 		]);
@@ -355,10 +377,28 @@ router.get("/:conferenceid/participants/:participantid", async (req, res) => {
 // get all papers for a conference
 router.get("/:conferenceid/papers/public", async (req, res) => {
 	try {
-		const papers = await pool.query("SELECT * FROM Papers WHERE conferenceid = $1 AND accepted = 'yes'", [req.params.conferenceid]);
-		if (papers.rows.length === 0) {
-			res.status(404).json("No papers found");
-		}
+		const papers = await pool.query("SELECT * FROM Papers WHERE conferenceid = $1 AND accepted = 't'", [req.params.conferenceid]);
+		// if (papers.rows.length === 0) {
+		// 	res.status(404).json("No papers found");
+		// }
+		res.status(200).json(papers.rows);
+	} catch (err) {
+		console.log(err.message);
+		logWritter(err.message);
+		res.status(500).send("Server error");
+	}
+});
+
+// get all pending papers for a conference
+router.get("/:conferenceid/papers", authorization, async (req, res) => {
+	try {
+		const papers = await pool.query(
+			"SELECT * from paperversions where paperversionid in (SELECT currentversion from papers where conferenceid=$1 and accepted='f');",
+			[req.params.conferenceid]
+		);
+		// if (papers.rows.length === 0) {
+		// 	res.status(404).json("No papers found");
+		// }
 		res.status(200).json(papers.rows);
 	} catch (err) {
 		console.log(err.message);
@@ -406,10 +446,10 @@ router.get("/:conferenceid/papers/author", authorization, async (req, res) => {
 });
 
 // create a new paper for a conference
-router.post("/:conferenceid/papers/", authorization, async (req, res) => {
+router.post("/:conferenceid/papers", authorization, async (req, res) => {
 	try {
 		const isAuthor = await pool.query("SELECT * FROM Participations WHERE userid = $1 AND conferenceid = $2 AND participationtype = 'Author'", [
-			req.userid,
+			req.body.userid,
 			req.params.conferenceid,
 		]);
 		if (isAuthor.rows.length === 0) {
@@ -418,7 +458,10 @@ router.post("/:conferenceid/papers/", authorization, async (req, res) => {
 			});
 		}
 		const newPaper = await pool.query("INSERT INTO papers (conferenceid) VALUES ($1) RETURNING *", [req.params.conferenceid]);
-		const author = await pool.query("INSERT INTO authorstopapers (paperid, userid) VALUES ($1, $2)", [newPaper.rows[0].paperid, req.userid]);
+		const author = await pool.query("INSERT INTO authorstopaper (paperid, authorid) VALUES ($1, $2)", [
+			newPaper.rows[0].paperid,
+			isAuthor.rows[0].participationid,
+		]);
 		// append a random reviewer
 		const reviewers = await pool.query("SELECT * FROM Participations WHERE conferenceid = $1 AND participationtype = 'Reviewer'", [
 			req.params.conferenceid,
@@ -428,13 +471,14 @@ router.post("/:conferenceid/papers/", authorization, async (req, res) => {
 				message: "No reviewers found",
 			});
 		}
+
 		const reviewer = reviewers.rows[Math.floor(Math.random() * reviewers.rows.length)];
-		const reviewerPaper = await pool.query("INSERT INTO reviewerstopapers (paperid, userid) VALUES ($1, $2)", [
+		const reviewerPaper = await pool.query("INSERT INTO reviewerstopaper (paperid, reviewerid) VALUES ($1, $2)", [
 			newPaper.rows[0].paperid,
-			reviewer.userid,
+			reviewer.participationid,
 		]);
 
-		res.json(newPaper.rows[0]);
+		res.status(201).json(newPaper.rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		logWritter(err.message);

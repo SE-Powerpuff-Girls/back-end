@@ -27,7 +27,7 @@ module.exports = async (req, res, next) => {
 			"Chair",
 		]);
 		// is author
-		let isAuthor = await pool.query("SELECT * FROM papers WHERE paperid = $1 AND authorid = $2", [paperid, participationid]);
+		let isAuthor = await pool.query("SELECT * FROM authorstopaper WHERE paperid = $1 AND authorid = $2", [paperid, participationid]);
 
 		if (!isChair.rows[0] && !isAuthor.rows[0] && !isReviewer.rows[0]) {
 			logWritter("evaluation", "get", req.userid, req.params.evaluationid, "fail");

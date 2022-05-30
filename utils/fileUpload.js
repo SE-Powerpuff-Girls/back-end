@@ -19,7 +19,10 @@ const addFile = async (my_file) => {
 		// Step 1. Create reference for file name in cloud storage
 		const imageRef = storage.child(fileName);
 		// Step 2. Upload the file in the bucket storage
-		const snapshot = await imageRef.put(file.buffer);
+		var metadata = {
+			contentType: file.mimetype,
+		};
+		const snapshot = await imageRef.put(file.buffer, metadata);
 		// Step 3. Grab the public url
 		const downloadURL = await snapshot.ref.getDownloadURL();
 

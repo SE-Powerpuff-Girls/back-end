@@ -73,12 +73,12 @@ router.get("/:evaluationid/comments", authorization, canSeeEvaluation, async (re
 	try {
 		const { evaluationid } = req.params;
 		const { rows } = await pool.query("SELECT * FROM comments WHERE evaluationid = $1", [evaluationid]);
-		if (rows.length === 0) {
-			logWritter(`evaluation ${evaluationid} not found`);
-			return res.status(404).json({
-				message: "Evaluation not found",
-			});
-		}
+		// if (rows.length === 0) {
+		// 	logWritter(`evaluation ${evaluationid} not found`);
+		// 	return res.status(404).json({
+		// 		message: "Evaluation not found",
+		// 	});
+		// }
 		logWritter(`evaluation ${evaluationid} found`);
 		return res.status(200).json(rows);
 	} catch (err) {

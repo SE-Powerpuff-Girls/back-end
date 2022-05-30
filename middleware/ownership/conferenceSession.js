@@ -4,8 +4,9 @@ const logWritter = require("../../utils/logWritter");
 module.exports = async (req, res, next) => {
 	try {
 		const { conferencesessionid } = req.params;
-		const { conference } = await pool.query("SELECT * FROM conferencesessions WHERE conferencesessionid = $1", [conferencesessionid]);
-		if (rows.length === 0) {
+
+		const conference = await pool.query("SELECT * FROM conferencesessions WHERE conferencesessionid = $1", [conferencesessionid]);
+		if (conference.rows.length === 0) {
 			logWritter("conferenceSession", "get", req.userid, req.params.conferenceid, "fail");
 			return res.status(404).json({
 				message: "Conference session not found",

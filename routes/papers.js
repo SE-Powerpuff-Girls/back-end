@@ -10,6 +10,7 @@ const addFile = require("../utils/fileUpload");
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage }).single("file");
 const logWritter = require("../utils/logWritter");
+const paper = require("../middleware/ownership/paper");
 // get a paper
 router.get("/:paperid", authorization, hasPaperAccess, async (req, res) => {
 	try {
@@ -30,10 +31,11 @@ router.get("/:paperid", authorization, hasPaperAccess, async (req, res) => {
 	}
 });
 
+//accept a paper
 router.put("/accept/:paperid", authorization, async (req, res) => {
 	try {
 		const { paperid } = req.params;
-		const { rows } = await pool.query("UPDATE papers SET accepted = true WHERE paperid = $1 RETURNING *", [paperid]);
+		const { rows } = await pool.query("UPDATE papers SET accepted ='t' WHERE paperid = $1 RETURNING *", [paperid]);
 		if (rows.length === 0) {
 			logWritter(`paper ${paperid} not found`);
 			return res.status(404).json({
@@ -75,15 +77,37 @@ router.delete("/:paperid", authorization, hasPaperAccess, async (req, res) => {
 router.get("/:paperid/authors", async (req, res) => {
 	try {
 		const { paperid } = req.params;
-		const { rows } = await pool.query("SELECT * FROM authorstopaper WHERE paperid = $1", [paperid]);
-		if (rows.length === 0) {
+		const users = await pool.query("SELECT * FROM authorstopaper WHERE paperid = $1", [paperid]);
+		if (users.rows.length === 0) {
 			logWritter(`paper ${paperid} not found`);
 			return res.status(404).json({
 				message: "Paper not found",
 			});
 		}
 		logWritter(`got authors for paper ${paperid}`);
-		return res.status(200).json(rows);
+		return res.status(200).json(users);
+	} catch (err) {
+		console.log(err.message);
+		logWritter(err.message);
+		res.status(500).send("Server error");
+	}
+});
+
+router.get("/:paperid/authors/names", async (req, res) => {
+	try {
+		const { paperid } = req.params;
+		const authors = await pool.query(
+			"SELECT firstname, lastname FROM users where userid = (SELECT userid FROM participations where participationid = (SELECT authorid FROM authorstopaper WHERE paperid = $1))",
+			[paperid]
+		);
+		if (authors.rows.length === 0) {
+			logWritter(`paper ${paperid} not found`);
+			return res.status(404).json({
+				message: "Paper not found",
+			});
+		}
+		logWritter(`got authors for paper ${paperid}`);
+		return res.status(200).json(authors.rows);
 	} catch (err) {
 		console.log(err.message);
 		logWritter(err.message);
@@ -218,9 +242,14 @@ router.post("/:paperid/conflictofinterests", authorization, async (req, res) => 
 	try {
 		const { paperid } = req.params;
 		const { reviewerID, description } = req.body;
+		const conferenceid = await pool.query("SELECT conferenceid FROM papers where paperid=$1", [paperid]);
+		const participationid = await pool.query("SELECT participationid FROM participations where userid=$1 and conferenceid=$2", [
+			reviewerID,
+			conferenceid.rows[0].conferenceid,
+		]);
 		const { rows } = await pool.query("INSERT INTO conflictofinterests (paperid, reviewerid, description) VALUES ($1, $2, $3) RETURNING *", [
 			paperid,
-			reviewerID,
+			participationid.rows[0].participationid,
 			description,
 		]);
 		if (rows.length === 0) {
@@ -261,7 +290,7 @@ router.get("/:paperid/conflictofinterests/:conflictofinterestsid", async (req, r
 	}
 });
 
-// delete a conflict of itnerests
+// delete a conflict of interests
 router.delete("/:paperid/conflictofinterests/:conflictofinterestsid", authorization, hasPaperAccess, async (req, res) => {
 	try {
 		const { paperid, conflictofinterestsid } = req.params;
@@ -288,7 +317,7 @@ router.delete("/:paperid/conflictofinterests/:conflictofinterestsid", authorizat
 router.get("/:paperid/paperversions", authorization, hasPaperAccess, async (req, res) => {
 	try {
 		const { paperid } = req.params;
-		const { rows } = await pool.query("SELECT * FROM paperversions WHERE paperid = $1", [paperid]);
+		const { rows } = await pool.query("SELECT * FROM paperversions WHERE paperid = $1 ORDER BY submittedat DESC", [paperid]);
 		if (rows.length === 0) {
 			logWritter(`paper ${paperid} not found`);
 			return res.status(404).json({
@@ -307,8 +336,9 @@ router.get("/:paperid/paperversions", authorization, hasPaperAccess, async (req,
 // create a paper version
 router.post("/:paperid/paperversions", authorization, hasPaperAccess, upload, async (req, res) => {
 	try {
-		const { paperid, title, abstract } = req.params;
-		let url = await addFile(req.file);
+		const { paperid } = req.params;
+		const { title, abstract } = req.body;
+		const url = await addFile(req.file);
 		if (url == null) {
 			url = "";
 		}
@@ -330,7 +360,7 @@ router.post("/:paperid/paperversions", authorization, hasPaperAccess, upload, as
 			paperid,
 		]);
 		logWritter(`created paper version ${rows[0].paperversionid} for paper ${paperid}`);
-		return res.status(201).json(rows[0]);
+		res.status(201).json(rows[0]);
 	} catch (err) {
 		console.log(err.message);
 		logWritter(err.message);
