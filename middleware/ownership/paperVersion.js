@@ -6,13 +6,13 @@ module.exports = async (req, res, next) => {
 		// get paper version id
 		const paperversionid = req.params.paperversionid;
 		// get paper id
-		const paperid = await pool.query("SELECT * FROM paperversions WHERE paperversionid = $1", [paperversionid]);
+		var paperid = await pool.query("SELECT * FROM paperversions WHERE paperversionid = $1", [paperversionid]);
 		paperid = paperid.rows[0].paperid;
 		// get conference id
-		const conferenceid = await pool.query("SELECT * FROM papers WHERE paperid = $1", [paperid]);
+		var conferenceid = await pool.query("SELECT * FROM papers WHERE paperid = $1", [paperid]);
 		conferenceid = conferenceid.rows[0].conferenceid;
 		// get participation id
-		const participationid = await pool.query("SELECT * FROM participations WHERE userid = $1 AND conferenceid = $2", [req.userid, conferenceid]);
+		var participationid = await pool.query("SELECT * FROM participations WHERE userid = $1 AND conferenceid = $2", [req.userid, conferenceid]);
 		participationid = participationid.rows[0].participationid;
 		// is chair
 		const isChair = await pool.query("SELECT * FROM participations WHERE userid = $1 AND conferenceid = $2 AND ParticipationType = $3", [
@@ -21,7 +21,7 @@ module.exports = async (req, res, next) => {
 			"Chair",
 		]);
 		// is author
-		const isAuthor = await pool.query("SELECT * FROM papers WHERE paperid = $1 AND authorid = $2", [paperid, participationid]);
+		const isAuthor = await pool.query("SELECT * FROM authorstopaper WHERE paperid = $1 AND authorid = $2", [paperid, participationid]);
 		// is reviewer
 		const isReviewer = await pool.query("SELECT * FROM ReviewersToPaper WHERE reviewerid = $1 AND paperid = $2", [participationid, paperid]);
 		if (!isChair.rows[0] && !isAuthor.rows[0] && !isReviewer.rows[0]) {

@@ -141,8 +141,30 @@ router.get("/:conferencesessionid/papers/", async (req, res) => {
 	}
 });
 
+router.get("/:conferencesessionid/papers/final", async (req, res) => {
+	try {
+		const { conferencesessionid } = req.params;
+		const { rows } = await pool.query(
+			"SELECT * FROM paperversions where paperversionid in (SELECT currentversion FROM papers WHERE conferencesessionid = $1)",
+			[conferencesessionid]
+		);
+		// if (rows.length === 0) {
+		// 	logWritter(`conference session ${conferencesessionid} not found`);
+		// 	return res.status(404).json({
+		// 		message: "No papers found on this session",
+		// 	});
+		// }
+		logWritter(`conference session ${conferencesessionid} found`);
+		return res.status(200).json(rows);
+	} catch (err) {
+		console.log(err.message);
+		logWritter(err.message);
+		res.status(500).send("Server error");
+	}
+});
+
 // append a paper to a session
-router.post("/:conferencesessionid/papers/", authorization, conferenSesessionIsOwner, async (req, res) => {
+router.post("/:conferencesessionid/papers", authorization, conferenSesessionIsOwner, async (req, res) => {
 	try {
 		const { conferencesessionid } = req.params;
 		const { paperid } = req.body;

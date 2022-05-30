@@ -34,7 +34,7 @@ router.post("/register", validator, async (req, res) => {
 
 		const token = jwtGenerator(newUser.rows[0].userid, newUser.rows[0].firstname, newUser.rows[0].lastname, newUser.rows[0].email);
 		logWritter("user", "register", newUser.rows[0].userid, null, "success");
-		res.status(201).json({ token, newUser });
+		res.status(201).json({ token, newUser: newUser.rows[0] });
 	} catch (err) {
 		console.log(err.message);
 		logWritter(err.message);
@@ -97,11 +97,11 @@ router.get("/:userid", async (req, res) => {
 			firstname: user.rows[0].firstname,
 			lastname: user.rows[0].lastname,
 			email: user.rows[0].email,
-			title: user.rows[0].title,
-			gender: user.rows[0].gender,
-			nationality: user.rows[0].nationality,
-			address: user.rows[0].address,
-			photolink: user.rows[0].photolink,
+			title: user.rows[0].title === "null" ? "" : user.rows[0].title,
+			gender: user.rows[0].gender === "null" ? "" : user.rows[0].gender,
+			nationality: user.rows[0].nationality === "null" ? "" : user.rows[0].nationality,
+			address: user.rows[0].address === "null" ? "" : user.rows[0].address,
+			photolink: user.rows[0].photolink === "null" ? "" : user.rows[0].photolink,
 		};
 		logWritter("Performed get");
 		res.status(200).json(output);
@@ -115,13 +115,13 @@ router.get("/:userid", async (req, res) => {
 // update an user
 router.put("/:userid", authorization, upload, async (req, res) => {
 	try {
-		let { firstName, lastName, title, gender, nationality, address } = req.body;
+		let { firstname, lastname, title, gender, nationality, address } = req.body;
 		const user = await pool.query("SELECT * FROM users where userid = $1", [req.params.userid]);
-		if (firstName == null || firstName == undefined) {
-			firstName = user.rows[0].firstname;
+		if (firstname == null || firstname == undefined) {
+			firstname = user.rows[0].firstname;
 		}
-		if (lastName == null || lastName == undefined) {
-			lastName = user.rows[0].lastname;
+		if (lastname == null || lastname == undefined) {
+			lastname = user.rows[0].lastname;
 		}
 		if (title == null || title == undefined) {
 			title = user.rows[0].title;
@@ -142,7 +142,7 @@ router.put("/:userid", authorization, upload, async (req, res) => {
 		}
 		let updated_user = await pool.query(
 			"UPDATE users SET firstname = $1, lastname = $2, title = $3, gender = $4, nationality = $5, address = $6, photolink = $7 WHERE userid = $8 RETURNING *",
-			[firstName, lastName, title, gender, nationality, address, url, req.params.userid]
+			[firstname, lastname, title, gender, nationality, address, url, req.params.userid]
 		);
 		if (updated_user.rows.length == 0) {
 			logWritter("user", "update", req.params.userid, null, "fail");
@@ -188,12 +188,12 @@ router.delete("/:userid", authorization, async (req, res) => {
 router.get("/:userid/topics", async (req, res) => {
 	try {
 		const topics = await pool.query("SELECT * FROM usertopics WHERE userid = $1", [req.params.userid]);
-		if (topics.rows.length === 0) {
-			logWritter("user", "get", req.params.userid, null, "fail");
-			return res.status(404).json({
-				message: "User does not exist",
-			});
-		}
+		// if (topics.rows.length === 0) {
+		// 	logWritter("user", "get", req.params.userid, null, "fail");
+		// 	return res.status(404).json({
+		// 		message: "User does not exist",
+		// 	});
+		// }
 		logWritter("user", "get", req.params.userid, null, "success");
 		res.status(200).json(topics.rows);
 	} catch (err) {

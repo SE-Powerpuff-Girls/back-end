@@ -17,7 +17,7 @@ app.use("/conferences", require("./routes/conferences"));
 app.use("/conferencesessions", require("./routes/conferenceSessions"));
 app.use("/papers", require("./routes/papers"));
 app.use("/paperversions", require("./routes/paperVersions"));
-app.use("evaluations", require("./routes/evaluations"));
+app.use("/evaluations", require("./routes/evaluations"));
 
 // test routes
 
