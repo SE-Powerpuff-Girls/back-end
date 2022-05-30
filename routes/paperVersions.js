@@ -280,12 +280,12 @@ router.get("/:paperversionid/publiccomments", authorization, canSeePaperVersion,
 		const { rows } = await pool.query("SELECT * FROM comments WHERE evaluationid IN (SELECT evaluationid from evaluations where paperversionid=$1)", [
 			paperversionid,
 		]);
-		if (rows.length === 0) {
-			logWritter(`paper version ${paperversionid} has no public comments`);
-			return res.status(404).json({
-				message: "Paper version not found",
-			});
-		}
+		// if (rows.length === 0) {
+		// 	logWritter(`paper version ${paperversionid} has no public comments`);
+		// 	return res.status(404).json({
+		// 		message: "Paper version not found",
+		// 	});
+		// }
 		logWritter(`got public comments from paper version ${paperversionid}`);
 		return res.status(200).json(rows);
 	} catch (err) {
